@@ -22,6 +22,7 @@ public class App extends Application {
         double viewHeight = displayHeight * displayRatio;
 
         Model model = new Model(viewWidth, viewHeight);
+        Controller controller = new Controller(model);
 
         // // Initialize UI components
         HBox root = new HBox();
@@ -30,8 +31,10 @@ public class App extends Application {
 
         root.getChildren().addAll(arena);
         model.addSubscribers(arena);
-        
+
         Scene scene = new Scene(root, viewWidth, viewHeight);
+        scene.setOnKeyPressed(controller::handleKeyPressed);
+        scene.setOnKeyReleased(controller::handleKeyReleased);
         stage.setTitle("");
         stage.setScene(scene);
         stage.setResizable(true);

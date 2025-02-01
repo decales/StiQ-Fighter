@@ -8,11 +8,11 @@ public class GameData {
   public enum GameState { inMenu, inGame }
 
   public GameState state;
-  public Fighter fighter1, fighter2;
+  public Fighter fighterOne, fighterTwo;
   
   public GameData(double displayWidth, double displayHeight) {
 
-    fighter1 = new Fighter(FaceDirection.left, ControlType.human, displayWidth, displayHeight);
-    fighter2 = new Fighter(FaceDirection.right, ControlType.computer, displayWidth, displayHeight);
+    fighterOne = new Fighter(FaceDirection.right, ControlType.human, displayWidth, displayHeight);
+    fighterTwo = new Fighter(FaceDirection.left, ControlType.human, displayWidth, displayHeight);
   }
 }

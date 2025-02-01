@@ -12,14 +12,12 @@ public class Arena extends Pane implements PublishSubscribe {
   }
 
 
-
   public void update(GameData gameData) {
-
     getChildren().clear();
 
-    FighterView fighterView1 = new FighterView(gameData.fighter1);
-    FighterView fighterView2 = new FighterView(gameData.fighter2);
-    getChildren().addAll(fighterView1, fighterView2);
+    FighterView fighterOneView = new FighterView(gameData.fighterOne);
+    FighterView fighterTwoView = new FighterView(gameData.fighterTwo);
+    getChildren().addAll(fighterOneView, fighterTwoView);
   }
 }
 
