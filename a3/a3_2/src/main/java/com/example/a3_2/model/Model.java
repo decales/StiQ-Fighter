@@ -2,15 +2,14 @@ package com.example.a3_2.model;
 
 import java.util.Arrays;
 import java.util.List;
-
+import com.example.a3_2.Controller.LeftPlayerKey;
 import com.example.a3_2.model.Fighter.ActionState;
-import com.example.a3_2.model.Fighter.ControlType;
 import com.example.a3_2.model.Fighter.FaceDirection;
+import com.example.a3_2.model.GameData.GameMode;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.scene.input.KeyCode;
 import javafx.util.Duration;
 
 public class Model {
@@ -19,17 +18,20 @@ public class Model {
   private double viewWidth, viewHeight;
   private GameData gameData;
   private Timeline gameTimer;
-
+  private GameMode selectedMode;
 
   public Model(double viewWidth, double viewHeight) {
-
     this.viewWidth = viewWidth;
     this.viewHeight = viewHeight;
+    
+    selectedMode = GameMode.PvC;
     initialize();
   }
 
   public void initialize() {
-    gameData = new GameData(viewWidth, viewHeight);
+    // initialize game data in mode selected by user
+    gameData = new GameData(selectedMode, viewWidth, viewHeight);
+
     // main game update loop
     gameTimer = new Timeline(new KeyFrame(Duration.millis(1000), e -> handleGameUpdates()));
     gameTimer.setCycleCount(Animation.INDEFINITE);
@@ -77,27 +79,20 @@ public class Model {
       gameData.fighterTwo.directionFacing = FaceDirection.left;
     }
   }
+  
 
+  public void controlFighter(Object key) {
+    Fighter fighter = (key instanceof LeftPlayerKey) ? gameData.fighterOne : gameData.fighterTwo;
+    
+    ActionState action;
+    if (fighter instanceof PlayerFighter player) action = player.keyActionMap.get(key);
+    else if (fighter instanceof ComputerFighter computer) action = null;
+    else return;
 
-  public void controlFighter(int fighterNumber, KeyCode key) {
-    Fighter fighter = (fighterNumber == 1) ? gameData.fighterOne : gameData.fighterTwo;
-
-    if (fighter.controlType == ControlType.human) {
-
-      switch(key) {
-        case A, LEFT -> { if (fighter.posX >= 0) fighter.moveLeft(); }
-        case D, RIGHT -> { if (fighter.posX + fighter.width <= viewWidth) fighter.moveRight(); }
-        case J -> fighter.attack(ActionState.highAttacking);
-        case K -> fighter.attack(ActionState.midAttacking);
-        case L -> fighter.attack(ActionState.lowAttacking);
-        case U -> fighter.block(ActionState.highBlocking);
-        case I -> fighter.block(ActionState.midBlocking);
-        case O -> fighter.block(ActionState.lowBlocking);
-        default -> {}
-      }
-    }
-    else { // CPU fighter
-
+    switch(action) {
+      case movingLeft -> { if (fighter.posX >= 0) fighter.executeAction(action); }
+      case movingRight -> { if (fighter.posX + fighter.width <= viewWidth) fighter.executeAction(action); }
+      default -> fighter.executeAction(action);
     }
   }
 }

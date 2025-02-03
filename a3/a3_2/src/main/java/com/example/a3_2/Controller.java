@@ -1,5 +1,6 @@
 package com.example.a3_2;
 
+import java.util.List;
 import java.util.Stack;
 import com.example.a3_2.model.Model;
 import javafx.animation.Animation;
@@ -10,6 +11,9 @@ import javafx.scene.input.KeyEvent;
 import javafx.util.Duration;
 
 public class Controller {
+
+  public enum LeftPlayerKey { Z, X, C, V, B, D, F, G };
+  public enum RightPlayerKey { N, M, COMMA, PERIOD, SLASH, K, L, COLON };
 
   private Model model;
   private Stack<KeyCode> keydownStack;
@@ -43,11 +47,17 @@ public class Controller {
 
     timer = new Timeline(new KeyFrame(Duration.millis(1000), event -> {
       if (!keydownStack.isEmpty()) {
+
         KeyCode recentKey = keydownStack.peek();
-        switch(recentKey) {
-          case A, D, J, K, L, U, I, O -> model.controlFighter(1, recentKey); 
-          default -> {}
-        }
+
+        try { // this is bad, I know lol
+          if (List.of(LeftPlayerKey.values()).contains(LeftPlayerKey.valueOf(recentKey.toString()))) {
+            model.controlFighter(LeftPlayerKey.valueOf(recentKey.toString()));
+          }
+          else if (List.of(RightPlayerKey.values()).contains(RightPlayerKey.valueOf(recentKey.toString()))) {
+            model.controlFighter(RightPlayerKey.valueOf(recentKey.toString()));
+          } 
+        } catch (IllegalArgumentException e) {};
       }
     }));
     timer.setCycleCount(Animation.INDEFINITE);

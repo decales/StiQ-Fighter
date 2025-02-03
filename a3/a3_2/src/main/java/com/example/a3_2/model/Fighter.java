@@ -4,15 +4,13 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 
-public class Fighter {
+public abstract class Fighter {
 
+  public enum ActionState { movingLeft, movingRight, lowAttacking, midAttacking, highAttacking, lowBlocking, midBlocking, highBlocking, idle };
   public enum FaceDirection { left, right };
-  public enum ControlType { human, computer };
-  public enum ActionState { idle, moving, lowAttacking, midAttacking, highAttacking, lowBlocking, midBlocking, highBlocking };
   
-  public FaceDirection directionFacing;
-  public ControlType controlType;
   public ActionState action;
+  public FaceDirection directionFacing;
 
   public int healthPoints;
   public int attackDamage;
@@ -21,38 +19,40 @@ public class Fighter {
   public boolean isInvulnerable;
   public int invulnerabilityDuration;
   public boolean isParried;
-  public int parryDuration;
+  public int parriedDuration;
+  public boolean canParry;
+  public double parryWindowDuration;
 
   public double width, height;
   public double initX, initY;
   public double posX, posY;
-  public double deltaX, deltaY;
+  public double deltaX;
 
   public double attackRadius;
   public double attackX, attackY;
   public double attackReach;
   
-  public Fighter(FaceDirection directionFacing, ControlType controlType, double displayWidth, double displayHeight) {
+  public Fighter(FaceDirection directionFacing, double viewWidth, double viewHeight) {
 
     // State-based attributes
     this.directionFacing = directionFacing;
-    this.controlType = controlType;
     action = ActionState.idle;
 
     // Stat-based attributes
     healthPoints = 100;
     attackDamage = 10;
-    attackDuration = 150;
-    attackResetDuration = 200;
+    attackDuration = 100;
+    attackResetDuration = 300;
     invulnerabilityDuration = 1000;
-    parryDuration = 3000;
+    parriedDuration = 3000;
+    parryWindowDuration = 250;
 
     // Position-based attributes
-    width = displayWidth * 0.0667;
-    height = displayHeight * 0.333;
-    initX = (directionFacing == FaceDirection.left) ? displayWidth * 0.8 : displayWidth * 0.2 - width;
-    initY = displayHeight * 0.667 - height;
-    deltaX = (displayWidth * 0.00333);
+    width = viewWidth * 0.0667;
+    height = viewHeight * 0.333;
+    initX = (directionFacing == FaceDirection.left) ? viewWidth * 0.8 : viewWidth * 0.2 - width;
+    initY = viewHeight * 0.667 - height;
+    deltaX = (viewWidth * 0.00333);
     attackReach = width * 2;
     attackRadius = width * 0.1;
     
@@ -61,13 +61,33 @@ public class Fighter {
 
 
   private boolean isAttacking() {
-    // when a fighter initiates an attack, they are locked in this action until the attack animation completes
     return action == ActionState.lowAttacking || action == ActionState.midAttacking || action == ActionState.highAttacking;
+  }
+
+
+  private boolean isBlocking() {
+    return action == ActionState.lowBlocking || action == ActionState.midBlocking || action == ActionState.highBlocking;
   }
 
 
   public boolean isDead() {
     return healthPoints <= 0;
+  }
+
+
+  public void executeAction(ActionState action) {
+    // when a fighter initiates an attack or is parried, they are locked in this action until the animation completes
+    if (!isAttacking() && !isParried) {
+      this.action = action;
+
+      switch(action) {
+        case idle -> {}
+        case movingLeft -> updatePosition(posX - deltaX, posY);
+        case movingRight -> updatePosition(posX + deltaX, posY);
+        case highAttacking, midAttacking, lowAttacking -> startAttackTimer();
+        case highBlocking, midBlocking, lowBlocking -> startParryWindowTimer();
+      }
+    }
   }
   
 
@@ -79,37 +99,6 @@ public class Fighter {
     // update attack hitbox a constant distance from fighter based which direction fighter is facing
     attackX = posX + ((directionFacing == FaceDirection.left) ? 0 : width);
     attackY = posY + (0.5 * height); 
-  }
-
-
-  protected void moveLeft() {
-    if (!isAttacking() && !isParried) {
-      action = ActionState.moving;
-      updatePosition(posX - deltaX, posY);
-    }
-  }
-
-
-  protected void moveRight() {
-    if (!isAttacking() && !isParried) {
-      action = ActionState.moving;
-      updatePosition(posX + deltaX, posY);
-    }
-  }
-
-
-  protected void attack(ActionState attackAction) {
-    // attack type passed into attackAction in the Model.controlFigher()
-    if (!isAttacking() && !isParried) {
-      action = attackAction;
-      startAttackTimer();
-    }
-  }
-
-
-  protected void block(ActionState blockAction) {
-    // block type passed into blockAction in Model.controlFigher()
-    if (!isAttacking() && !isParried) action = blockAction;
   }
 
 
@@ -125,25 +114,36 @@ public class Fighter {
     attackTimer.setCycleCount(numberFrames);
     attackTimer.play();
   }
-  
 
-  private void startStatusTimer() {
-    // timer to reset invulnerability and parried statuses after delay
-    Timeline statusTimer = new Timeline();
 
-    if (isInvulnerable) {
-      statusTimer.getKeyFrames().setAll(new KeyFrame(Duration.millis(invulnerabilityDuration)));
-      statusTimer.setOnFinished(e -> isInvulnerable = false);
-    }
-    else if (isParried) {
-      statusTimer.getKeyFrames().setAll(new KeyFrame(Duration.millis(parryDuration)));
-      statusTimer.setOnFinished(e -> isParried = false);
-    }
-    statusTimer.play();
+  private void startParryWindowTimer() {
+    // timer to reset parry window after delay
+    canParry =  true;
+    Timeline timer = new Timeline(new KeyFrame(Duration.millis(parryWindowDuration)));
+    timer.setOnFinished(e -> canParry = false);
+    timer.play();
   }
 
 
-  public void detectHit(Fighter opponent) {
+  private void startInvulnerableTimer() {
+    // timer to reset invulnerability status after delay
+    isInvulnerable =  true;
+    Timeline timer = new Timeline(new KeyFrame(Duration.millis(invulnerabilityDuration)));
+    timer.setOnFinished(e -> isInvulnerable = false);
+    timer.play();
+  }
+
+
+  private void startParriedTimer() {
+    // timer to reset parried status after delay
+    isParried =  true;
+    Timeline timer = new Timeline(new KeyFrame(Duration.millis(parriedDuration)));
+    timer.setOnFinished(e -> isParried = false);
+    timer.play();
+  }
+  
+
+  public boolean detectHit(Fighter opponent) {
     // only check for hit if the opponent is attacking and the fighter was not already recently hit
     if (opponent.isAttacking() && !isInvulnerable) {
 
@@ -159,20 +159,22 @@ public class Fighter {
         }
 
         if (attackBlocked) {
-          // if the figher started their block immediately before the opponent's attack would land, parry the opponent
-
-        }
+          if (canParry) opponent.startParriedTimer(); // prevent damage and parry the opponent if their attack was blocked within the parry window
+          return false; // otherwise simply prevent damage
+        } 
         else { // fighter takes damage
-          // take extra damage fighter is hit while in parried status
+          // take extra damage when fighter is hit while in parried status
           double damageMultiplier = 1;
           if (isParried) { isParried = false; damageMultiplier = 2.5; }
           healthPoints -= opponent.attackDamage * damageMultiplier;
 
           // fighter is temporarily invulnerable after taking damage
-          isInvulnerable = true;
-          startStatusTimer();
+          startInvulnerableTimer();
+          return true;
         }
       }
+      return false;
     }
+    return false;
   }
 }
