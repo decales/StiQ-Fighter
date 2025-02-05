@@ -2,10 +2,12 @@ package com.example.a3_2;
 
 import com.example.a3_2.model.Model;
 import com.example.a3_2.view.Arena;
+import com.example.a3_2.view.HealthBar;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
@@ -25,12 +27,13 @@ public class App extends Application {
         Controller controller = new Controller(model);
 
         // // Initialize UI components
-        HBox root = new HBox();
+        VBox root = new VBox();
         Arena arena = new Arena();
+        HealthBar healthBar = new HealthBar();
         arena.setPrefSize(displayWidth, displayHeight);
 
-        root.getChildren().addAll(arena);
-        model.addSubscribers(arena);
+        root.getChildren().addAll(healthBar, arena);
+        model.addSubscribers(healthBar, arena);
 
         Scene scene = new Scene(root, viewWidth, viewHeight);
         scene.setOnKeyPressed(controller::handleKeyPressed);

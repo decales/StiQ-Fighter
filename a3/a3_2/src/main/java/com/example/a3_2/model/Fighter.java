@@ -12,6 +12,7 @@ public abstract class Fighter {
   public ActionState action;
   public FaceDirection directionFacing;
 
+  public int initHealthPoints;
   public int healthPoints;
   public int attackDamage;
   public int attackDuration;
@@ -24,6 +25,7 @@ public abstract class Fighter {
   public double parryWindowDuration;
 
   public double width, height;
+  public double minX, maxX;
   public double initX, initY;
   public double posX, posY;
   public double deltaX;
@@ -39,10 +41,11 @@ public abstract class Fighter {
     action = ActionState.idle;
 
     // Stat-based attributes
-    healthPoints = 100;
+    initHealthPoints = 100;
+    healthPoints = initHealthPoints;
     attackDamage = 10;
     attackDuration = 100;
-    attackResetDuration = 300;
+    attackResetDuration = 400;
     invulnerabilityDuration = 1000;
     parriedDuration = 3000;
     parryWindowDuration = 250;
@@ -50,17 +53,28 @@ public abstract class Fighter {
     // Position-based attributes
     width = viewWidth * 0.0667;
     height = viewHeight * 0.333;
+    minX = 0;
+    maxX = viewWidth;
     initX = (directionFacing == FaceDirection.left) ? viewWidth * 0.8 : viewWidth * 0.2 - width;
     initY = viewHeight * 0.667 - height;
     deltaX = (viewWidth * 0.00333);
-    attackReach = width * 2;
+    attackReach = width * 2.5;
     attackRadius = width * 0.1;
     
     updatePosition(initX, initY);
   }
 
 
-  private boolean isAttacking() {
+  public void reset() {
+    healthPoints = initHealthPoints;
+    isInvulnerable = false;
+    isParried = false;
+    posX = initX;
+    posY = initY;
+  }
+
+
+  protected boolean isAttacking() {
     return action == ActionState.lowAttacking || action == ActionState.midAttacking || action == ActionState.highAttacking;
   }
 
@@ -70,35 +84,36 @@ public abstract class Fighter {
   }
 
 
-  public boolean isDead() {
-    return healthPoints <= 0;
-  }
-
-
-  public void executeAction(ActionState action) {
+  public boolean executeAction(ActionState action) {
     // when a fighter initiates an attack or is parried, they are locked in this action until the animation completes
     if (!isAttacking() && !isParried) {
       this.action = action;
 
       switch(action) {
         case idle -> {}
-        case movingLeft -> updatePosition(posX - deltaX, posY);
-        case movingRight -> updatePosition(posX + deltaX, posY);
+        case movingLeft -> { return updatePosition(posX - deltaX, posY); }
+        case movingRight -> { return updatePosition(posX + deltaX, posY); }
         case highAttacking, midAttacking, lowAttacking -> startAttackTimer();
         case highBlocking, midBlocking, lowBlocking -> startParryWindowTimer();
       }
+      return true;
     }
+    return false;
   }
   
 
-  private void updatePosition(double posX, double posY) {
-    // update fighter body hitbox position (position values represent topleft corner)
-    this.posX = posX;
-    this.posY = posY;
-
-    // update attack hitbox a constant distance from fighter based which direction fighter is facing
-    attackX = posX + ((directionFacing == FaceDirection.left) ? 0 : width);
-    attackY = posY + (0.5 * height); 
+  private boolean updatePosition(double posX, double posY) {
+    if (posX > minX && posX + width < maxX) {
+      // update fighter body hitbox position (position values represent topleft corner)
+      this.posX = posX;
+      this.posY = posY;
+      // update attack hitbox a constant distance from fighter based which direction fighter is facing
+      attackX = posX + ((directionFacing == FaceDirection.left) ? 0 : width);
+      attackY = posY + (0.5 * height); 
+      
+      return true;
+    }
+    return false;
   }
 
 
@@ -165,7 +180,7 @@ public abstract class Fighter {
         else { // fighter takes damage
           // take extra damage when fighter is hit while in parried status
           double damageMultiplier = 1;
-          if (isParried) { isParried = false; damageMultiplier = 2.5; }
+          if (isParried) { isParried = false; damageMultiplier = 3; }
           healthPoints -= opponent.attackDamage * damageMultiplier;
 
           // fighter is temporarily invulnerable after taking damage

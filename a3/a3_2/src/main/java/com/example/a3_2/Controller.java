@@ -17,7 +17,8 @@ public class Controller {
 
   private Model model;
   private Stack<KeyCode> keydownStack;
-  private Timeline timer;
+  private Timeline leftPlayertimer;
+  private Timeline rightPlayerTimer;
   
   public Controller(Model model) {
     this.model = model;
@@ -43,25 +44,28 @@ public class Controller {
 
 
   private void keyAction() {
-    if (timer != null) timer.stop();
+    if (leftPlayertimer != null) leftPlayertimer.stop();
 
-    timer = new Timeline(new KeyFrame(Duration.millis(1000), event -> {
+    leftPlayertimer = new Timeline(new KeyFrame(Duration.millis(1000), event -> {
       if (!keydownStack.isEmpty()) {
 
         KeyCode recentKey = keydownStack.peek();
 
         try { // this is bad, I know lol
           if (List.of(LeftPlayerKey.values()).contains(LeftPlayerKey.valueOf(recentKey.toString()))) {
-            model.controlFighter(LeftPlayerKey.valueOf(recentKey.toString()));
+            model.controlPlayerFighter(LeftPlayerKey.valueOf(recentKey.toString()));
           }
-          else if (List.of(RightPlayerKey.values()).contains(RightPlayerKey.valueOf(recentKey.toString()))) {
-            model.controlFighter(RightPlayerKey.valueOf(recentKey.toString()));
+        } catch (IllegalArgumentException e) {};
+
+        try {
+          if (List.of(RightPlayerKey.values()).contains(RightPlayerKey.valueOf(recentKey.toString()))) {
+            model.controlPlayerFighter(RightPlayerKey.valueOf(recentKey.toString()));
           } 
         } catch (IllegalArgumentException e) {};
       }
     }));
-    timer.setCycleCount(Animation.INDEFINITE);
-    timer.setRate(60);
-    timer.play();
+    leftPlayertimer.setCycleCount(Animation.INDEFINITE);
+    leftPlayertimer.setRate(60);
+    leftPlayertimer.play();
   }
 }
