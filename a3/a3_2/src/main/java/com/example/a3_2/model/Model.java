@@ -5,9 +5,8 @@ import java.util.List;
 
 import javax.sound.sampled.Control;
 
-import com.example.a3_2.Controller.LeftPlayerKey;
 import com.example.a3_2.model.Fighter.ActionState;
-import com.example.a3_2.model.Fighter.FaceDirection;
+import com.example.a3_2.model.Fighter.FighterSide;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -31,7 +30,7 @@ public class Model {
     this.viewWidth = viewWidth;
     this.viewHeight = viewHeight;
     
-    startGame(GameMode.PvC);
+    startGame(GameMode.PvP);
   }
 
 
@@ -41,16 +40,16 @@ public class Model {
 
     switch(gameMode) {
       case PvP -> { // player vs player
-        leftFighter = new PlayerFighter(FaceDirection.right, viewWidth, viewHeight);
-        rightFighter = new PlayerFighter(FaceDirection.left, viewWidth, viewHeight);
+        leftFighter = new PlayerFighter(FighterSide.left, viewWidth, viewHeight);
+        rightFighter = new PlayerFighter(FighterSide.right, viewWidth, viewHeight);
       }
       case PvC -> { // player vs computer
-        leftFighter = new PlayerFighter(FaceDirection.right, viewWidth, viewHeight);
-        rightFighter = new ComputerFighter(FaceDirection.left, viewWidth, viewHeight);
+        leftFighter = new PlayerFighter(FighterSide.left, viewWidth, viewHeight);
+        rightFighter = new ComputerFighter(FighterSide.right, viewWidth, viewHeight);
       }
       case CvC -> { // computer vs computer
-        leftFighter = new ComputerFighter(FaceDirection.right, viewWidth, viewHeight);
-        rightFighter = new ComputerFighter(FaceDirection.left, viewWidth, viewHeight);
+        leftFighter = new ComputerFighter(FighterSide.left, viewWidth, viewHeight);
+        rightFighter = new ComputerFighter(FighterSide.right, viewWidth, viewHeight);
       }
     }
 
@@ -91,13 +90,13 @@ public class Model {
     double leftFighterCenterX = leftFighter.posX + leftFighter.width / 2;
     double rightFighterCenterX = rightFighter.posX + rightFighter.width / 2;
 
-    if (leftFighterCenterX > rightFighterCenterX) {
-      leftFighter.directionFacing = FaceDirection.left;
-      rightFighter.directionFacing = FaceDirection.right;
+    if (leftFighterCenterX < rightFighterCenterX) {
+      leftFighter.side = FighterSide.left;
+      rightFighter.side = FighterSide.right;
     }
     else {
-      leftFighter.directionFacing = FaceDirection.right;
-      rightFighter.directionFacing = FaceDirection.left;
+      leftFighter.side = FighterSide.right;
+      rightFighter.side = FighterSide.left;
     }
   }
 
@@ -122,13 +121,16 @@ public class Model {
   }
   
 
-  public void controlPlayerFighter(Object key) {
-    // determine whether left or right player should be controlled based on the key that was pressed
-    Fighter fighter = (key instanceof LeftPlayerKey) ? leftFighter : rightFighter;
-    
-    if (fighter instanceof PlayerFighter player) {
-      ActionState action = player.keyActionMap.get(key);
-      fighter.executeAction(action);
+  public void controlPlayerFighter(Object key, FighterSide side) {
+    PlayerFighter fighter;
+
+    if (gameMode == GameMode.PvC) {
+      fighter = (PlayerFighter) leftFighter;
+      fighter.executeAction(fighter.keyActionMap.get(key));
+    }
+    else if (gameMode == GameMode.PvP) {
+      fighter = (side == FighterSide.left) ? (PlayerFighter) leftFighter : (PlayerFighter) rightFighter;
+      fighter.executeAction(fighter.keyActionMap.get(key));
     }
   }
 }

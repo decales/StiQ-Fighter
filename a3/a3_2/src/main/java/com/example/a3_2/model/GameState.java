@@ -3,7 +3,7 @@ package com.example.a3_2.model;
 import java.util.Objects;
 
 import com.example.a3_2.model.Fighter.ActionState;
-import com.example.a3_2.model.Fighter.FaceDirection;
+import com.example.a3_2.model.Fighter.FighterSide;
 
 public class GameState {
 
@@ -30,7 +30,7 @@ public class GameState {
     opponentIsInvulnerable = opponent.isInvulnerable;
 
     // distanceToOpponent = Math.abs(self.posX - opponent.posX);
-    inAttackRange = (self.directionFacing == FaceDirection.right) 
+    inAttackRange = (self.side == FighterSide.right) 
       ?  (self.posX + self.width + self.attackReach) >= opponent.posX
       :  (self.posX - self.attackReach) <= (opponent.posX + opponent.width);
   }

@@ -13,9 +13,9 @@ public class ComputerFighter extends Fighter {
   private GameState currentState;
   private Random random;
   
-  public ComputerFighter(FaceDirection directionFacing, double viewWidth, double viewHeight) {
+  public ComputerFighter(FighterSide side, double viewWidth, double viewHeight) {
 
-    super(directionFacing, viewWidth, viewHeight);
+    super(side, viewWidth, viewHeight);
 
     qTable = new HashMap<>();
 

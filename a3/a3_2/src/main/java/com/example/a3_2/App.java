@@ -1,12 +1,12 @@
 package com.example.a3_2;
 
+import com.example.a3_2.controller.Controller;
 import com.example.a3_2.model.Model;
 import com.example.a3_2.view.Arena;
 import com.example.a3_2.view.HealthBar;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -23,8 +23,11 @@ public class App extends Application {
         double viewWidth = displayWidth * displayRatio;
         double viewHeight = displayHeight * displayRatio;
 
+        // Model
         Model model = new Model(viewWidth, viewHeight);
-        Controller controller = new Controller(model);
+
+        // Controllers
+        Controller commonController = new Controller(model);
 
         // // Initialize UI components
         VBox root = new VBox();
@@ -36,8 +39,10 @@ public class App extends Application {
         model.addSubscribers(healthBar, arena);
 
         Scene scene = new Scene(root, viewWidth, viewHeight);
-        scene.setOnKeyPressed(controller::handleKeyPressed);
-        scene.setOnKeyReleased(controller::handleKeyReleased);
+        scene.setOnMouseClicked(commonController::handleMouseEvent);
+        scene.setOnKeyPressed(commonController::handleKeyPressed);
+        scene.setOnKeyReleased(commonController::handleKeyReleased);
+
         stage.setTitle("");
         stage.setScene(scene);
         stage.setResizable(true);

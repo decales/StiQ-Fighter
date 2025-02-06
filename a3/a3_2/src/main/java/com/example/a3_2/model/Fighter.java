@@ -6,11 +6,11 @@ import javafx.util.Duration;
 
 public abstract class Fighter {
 
-  public enum ActionState { movingLeft, movingRight, lowAttacking, midAttacking, highAttacking, lowBlocking, midBlocking, highBlocking, idle };
-  public enum FaceDirection { left, right };
+  public enum ActionState { movingLeft, movingRight, lowAttacking, highAttacking, lowBlocking, highBlocking, idle };
+  public enum FighterSide { left, right };
   
   public ActionState action;
-  public FaceDirection directionFacing;
+  public FighterSide side;
 
   public int initHealthPoints;
   public int healthPoints;
@@ -34,10 +34,10 @@ public abstract class Fighter {
   public double attackX, attackY;
   public double attackReach;
   
-  public Fighter(FaceDirection directionFacing, double viewWidth, double viewHeight) {
+  public Fighter(FighterSide side, double viewWidth, double viewHeight) {
 
     // State-based attributes
-    this.directionFacing = directionFacing;
+    this.side = side;
     action = ActionState.idle;
 
     // Stat-based attributes
@@ -55,7 +55,7 @@ public abstract class Fighter {
     height = viewHeight * 0.333;
     minX = 0;
     maxX = viewWidth;
-    initX = (directionFacing == FaceDirection.left) ? viewWidth * 0.8 : viewWidth * 0.2 - width;
+    initX = (side == FighterSide.left) ? viewWidth * 0.2 - width : viewWidth * 0.8;
     initY = viewHeight * 0.667 - height;
     deltaX = (viewWidth * 0.00333);
     attackReach = width * 2.5;
@@ -75,12 +75,12 @@ public abstract class Fighter {
 
 
   protected boolean isAttacking() {
-    return action == ActionState.lowAttacking || action == ActionState.midAttacking || action == ActionState.highAttacking;
+    return action == ActionState.lowAttacking || action == ActionState.highAttacking;
   }
 
 
   private boolean isBlocking() {
-    return action == ActionState.lowBlocking || action == ActionState.midBlocking || action == ActionState.highBlocking;
+    return action == ActionState.lowBlocking || action == ActionState.highBlocking;
   }
 
 
@@ -93,8 +93,8 @@ public abstract class Fighter {
         case idle -> {}
         case movingLeft -> { return updatePosition(posX - deltaX, posY); }
         case movingRight -> { return updatePosition(posX + deltaX, posY); }
-        case highAttacking, midAttacking, lowAttacking -> startAttackTimer();
-        case highBlocking, midBlocking, lowBlocking -> startParryWindowTimer();
+        case highAttacking, lowAttacking -> startAttackTimer();
+        case highBlocking, lowBlocking -> startParryWindowTimer();
       }
       return true;
     }
@@ -108,7 +108,7 @@ public abstract class Fighter {
       this.posX = posX;
       this.posY = posY;
       // update attack hitbox a constant distance from fighter based which direction fighter is facing
-      attackX = posX + ((directionFacing == FaceDirection.left) ? 0 : width);
+      attackX = posX + ((side == FighterSide.left) ? width : 0);
       attackY = posY + (0.5 * height); 
       
       return true;
@@ -120,7 +120,7 @@ public abstract class Fighter {
   private void startAttackTimer() {
     int numberFrames = (attackDuration * 60) / 1000; // 60 frames per 1000 ms
     double frameDuration = attackDuration / numberFrames; // time in ms of each frame
-    double attackDeltaX =  ((directionFacing == FaceDirection.left) ? -attackReach : attackReach) / numberFrames; // attack dx per frame
+    double attackDeltaX =  ((side == FighterSide.left) ? attackReach : -attackReach) / numberFrames; // attack dx per frame
     
     Timeline attackTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e -> attackX += attackDeltaX));
     Timeline resetTimer = new Timeline(new KeyFrame(Duration.millis(attackResetDuration))); // delay after attack to prevent attack spam
@@ -168,7 +168,6 @@ public abstract class Fighter {
         boolean attackBlocked; // check if fighter blocked the type of opponent attack
         switch(action) {
           case lowBlocking -> attackBlocked = opponent.action == ActionState.lowAttacking;
-          case midBlocking -> attackBlocked = opponent.action == ActionState.midAttacking;
           case highBlocking -> attackBlocked = opponent.action == ActionState.highAttacking;
           default -> attackBlocked = false;
         }
