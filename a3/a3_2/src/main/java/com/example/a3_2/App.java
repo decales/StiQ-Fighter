@@ -2,11 +2,13 @@ package com.example.a3_2;
 
 import com.example.a3_2.controller.Controller;
 import com.example.a3_2.model.Model;
-import com.example.a3_2.view.Arena;
+import com.example.a3_2.view.GameView;
 import com.example.a3_2.view.HealthBar;
+import com.example.a3_2.view.ModeSelectionView;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -23,25 +25,22 @@ public class App extends Application {
         double viewWidth = displayWidth * displayRatio;
         double viewHeight = displayHeight * displayRatio;
 
-        // Model
+        // model + controller
         Model model = new Model(viewWidth, viewHeight);
+        Controller controller = new Controller(model);
 
-        // Controllers
-        Controller commonController = new Controller(model);
+        // ui components
+        StackPane root = new StackPane();
+        ModeSelectionView modeSelectionView = new ModeSelectionView(controller);
+        GameView gameView = new GameView();
+        gameView.setPrefSize(displayWidth, displayHeight);
 
-        // // Initialize UI components
-        VBox root = new VBox();
-        Arena arena = new Arena();
-        HealthBar healthBar = new HealthBar();
-        arena.setPrefSize(displayWidth, displayHeight);
-
-        root.getChildren().addAll(healthBar, arena);
-        model.addSubscribers(healthBar, arena);
+        root.getChildren().addAll(modeSelectionView, gameView);
+        model.addSubscribers(modeSelectionView, gameView);
 
         Scene scene = new Scene(root, viewWidth, viewHeight);
-        scene.setOnMouseClicked(commonController::handleMouseEvent);
-        scene.setOnKeyPressed(commonController::handleKeyPressed);
-        scene.setOnKeyReleased(commonController::handleKeyReleased);
+        scene.setOnKeyPressed(controller::handleKeyPressed);
+        scene.setOnKeyReleased(controller::handleKeyReleased);
 
         stage.setTitle("");
         stage.setScene(scene);

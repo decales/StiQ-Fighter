@@ -9,24 +9,13 @@ import javafx.scene.layout.StackPane;
 
 
 
-public class HealthBar extends HBox implements PublishSubscribe {
+public class HealthBar {
   
 
 
 
-  @Override
-public void update(Fighter leftFighter, Fighter rightFighter) {
 
-  getChildren().clear();
-
-  Label a = new Label(String.format("%d", leftFighter.healthPoints));
-  Label b = new Label(String.format("                    %d", rightFighter.healthPoints));
-
-
-  getChildren().addAll(a, b);
-    
   
-}
 
 
   

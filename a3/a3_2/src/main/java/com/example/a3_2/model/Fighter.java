@@ -1,5 +1,6 @@
 package com.example.a3_2.model;
 
+import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
@@ -9,6 +10,7 @@ public abstract class Fighter {
   public enum ActionState { movingLeft, movingRight, lowAttacking, highAttacking, lowBlocking, highBlocking, idle };
   public enum FighterSide { left, right };
   
+  private Timeline actionTimer;
   public ActionState action;
   public FighterSide side;
 
@@ -37,8 +39,9 @@ public abstract class Fighter {
   public Fighter(FighterSide side, double viewWidth, double viewHeight) {
 
     // State-based attributes
-    this.side = side;
+    actionTimer = new Timeline();
     action = ActionState.idle;
+    this.side = side;
 
     // Stat-based attributes
     initHealthPoints = 100;
@@ -51,7 +54,7 @@ public abstract class Fighter {
     parryWindowDuration = 250;
 
     // Position-based attributes
-    width = viewWidth * 0.0667;
+    width = viewWidth * 0.075;
     height = viewHeight * 0.333;
     minX = 0;
     maxX = viewWidth;
@@ -84,15 +87,22 @@ public abstract class Fighter {
   }
 
 
+  private boolean isMoving() {
+    return action == ActionState.movingLeft || action == ActionState.movingRight;
+  }
+
+
   public boolean executeAction(ActionState action) {
     // when a fighter initiates an attack or is parried, they are locked in this action until the animation completes
     if (!isAttacking() && !isParried) {
+      
       this.action = action;
+      actionTimer.stop(); // stop the timer to cancel previous animation
 
       switch(action) {
         case idle -> {}
-        case movingLeft -> { return updatePosition(posX - deltaX, posY); }
-        case movingRight -> { return updatePosition(posX + deltaX, posY); }
+        case movingLeft -> startMovingTimer();
+        case movingRight -> startMovingTimer();
         case highAttacking, lowAttacking -> startAttackTimer();
         case highBlocking, lowBlocking -> startParryWindowTimer();
       }
@@ -117,44 +127,53 @@ public abstract class Fighter {
   }
 
 
+  private void startMovingTimer() {
+    double deltaX = (action == ActionState.movingLeft) ? -this.deltaX : this.deltaX;
+    actionTimer = new Timeline(new KeyFrame (Duration.millis(1000), e -> updatePosition(posX + deltaX, posY)));
+    actionTimer.setCycleCount(Animation.INDEFINITE);
+    actionTimer.setRate(60);
+    actionTimer.play();
+  }
+
+
   private void startAttackTimer() {
     int numberFrames = (attackDuration * 60) / 1000; // 60 frames per 1000 ms
     double frameDuration = attackDuration / numberFrames; // time in ms of each frame
     double attackDeltaX =  ((side == FighterSide.left) ? attackReach : -attackReach) / numberFrames; // attack dx per frame
     
-    Timeline attackTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e -> attackX += attackDeltaX));
+    actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e -> attackX += attackDeltaX));
     Timeline resetTimer = new Timeline(new KeyFrame(Duration.millis(attackResetDuration))); // delay after attack to prevent attack spam
-    attackTimer.setOnFinished(e -> resetTimer.play());
+    actionTimer.setOnFinished(e -> resetTimer.play());
     resetTimer.setOnFinished(e -> {action = ActionState.idle; updatePosition(posX, posY);});
-    attackTimer.setCycleCount(numberFrames);
-    attackTimer.play();
+    actionTimer.setCycleCount(numberFrames);
+    actionTimer.play();
   }
 
 
   private void startParryWindowTimer() {
     // timer to reset parry window after delay
     canParry =  true;
-    Timeline timer = new Timeline(new KeyFrame(Duration.millis(parryWindowDuration)));
-    timer.setOnFinished(e -> canParry = false);
-    timer.play();
+    actionTimer = new Timeline(new KeyFrame(Duration.millis(parryWindowDuration)));
+    actionTimer.setOnFinished(e -> canParry = false);
+    actionTimer.play();
   }
 
 
   private void startInvulnerableTimer() {
     // timer to reset invulnerability status after delay
     isInvulnerable =  true;
-    Timeline timer = new Timeline(new KeyFrame(Duration.millis(invulnerabilityDuration)));
-    timer.setOnFinished(e -> isInvulnerable = false);
-    timer.play();
+    Timeline invulnerableTimer = new Timeline(new KeyFrame(Duration.millis(invulnerabilityDuration)));
+    invulnerableTimer.setOnFinished(e -> isInvulnerable = false);
+    invulnerableTimer.play();
   }
 
 
   private void startParriedTimer() {
     // timer to reset parried status after delay
     isParried =  true;
-    Timeline timer = new Timeline(new KeyFrame(Duration.millis(parriedDuration)));
-    timer.setOnFinished(e -> isParried = false);
-    timer.play();
+    Timeline parriedTimer = new Timeline(new KeyFrame(Duration.millis(parriedDuration)));
+    parriedTimer.setOnFinished(e -> isParried = false);
+    parriedTimer.play();
   }
   
 

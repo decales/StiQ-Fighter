@@ -3,11 +3,8 @@ package com.example.a3_2.model;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.sound.sampled.Control;
-
 import com.example.a3_2.model.Fighter.ActionState;
 import com.example.a3_2.model.Fighter.FighterSide;
-
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -15,11 +12,13 @@ import javafx.util.Duration;
 
 public class Model {
 
-  public enum AppState { inMenu, inGame }
+  public enum AppState { selectingMode, inGame }
   public enum GameMode { PvP, PvC, CvC }
 
   private List<PublishSubscribe> subscribers;
   private double viewWidth, viewHeight;
+  private AppState appState;
+
   private Timeline gameTimer;
   private GameMode gameMode;
   private Fighter leftFighter, rightFighter;
@@ -29,13 +28,13 @@ public class Model {
 
     this.viewWidth = viewWidth;
     this.viewHeight = viewHeight;
-    
-    startGame(GameMode.PvP);
+    appState = AppState.selectingMode;
   }
 
 
   public void startGame(GameMode gameMode) {
-    // initialize fighter types based on selected game mode
+    // start game and initialize fighter types based on selected game mode
+    appState = AppState.inGame;
     this.gameMode = gameMode;
 
     switch(gameMode) {
@@ -63,7 +62,7 @@ public class Model {
 
   private void handleGameUpdates() {
     faceFighers();
-    controlComputerFighters(); // only applies to PvC or CvC, but called regardless
+    controlComputerFighters(); // only applies in PvC or CvC, but called regardless
     leftFighter.detectHit(rightFighter);
     rightFighter.detectHit(leftFighter);
     checkReset();
@@ -80,7 +79,7 @@ public class Model {
 
   private void updateSubscribers() {
     for (PublishSubscribe subscriber : subscribers) {
-      subscriber.update(leftFighter, rightFighter);
+      subscriber.update(appState, leftFighter, rightFighter);
     }
   }
 
@@ -99,6 +98,7 @@ public class Model {
       rightFighter.side = FighterSide.left;
     }
   }
+
 
   private void checkReset() {
     // reset the fight when a player wins
@@ -124,13 +124,13 @@ public class Model {
   public void controlPlayerFighter(Object key, FighterSide side) {
     PlayerFighter fighter;
 
-    if (gameMode == GameMode.PvC) {
+    if (gameMode == GameMode.PvC && side == FighterSide.left) {
       fighter = (PlayerFighter) leftFighter;
-      fighter.executeAction(fighter.keyActionMap.get(key));
+      fighter.executeAction((key == null) ? ActionState.idle : fighter.keyActionMap.get(key));
     }
     else if (gameMode == GameMode.PvP) {
       fighter = (side == FighterSide.left) ? (PlayerFighter) leftFighter : (PlayerFighter) rightFighter;
-      fighter.executeAction(fighter.keyActionMap.get(key));
+      fighter.executeAction((key == null) ? ActionState.idle : fighter.keyActionMap.get(key));
     }
   }
 }

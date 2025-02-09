@@ -4,10 +4,13 @@ import java.util.Stack;
 
 import com.example.a3_2.model.Model;
 import com.example.a3_2.model.Fighter.FighterSide;
+import com.example.a3_2.model.Model.GameMode;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.event.ActionEvent;
+import javafx.scene.control.Button;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
@@ -30,8 +33,10 @@ public class Controller {
   }
 
 
-  public void handleMouseEvent(MouseEvent e) {
-    System.out.println(e);
+  public void handleActionEvent(ActionEvent e) {
+    if (e.getSource() instanceof Button button) {
+      try { model.startGame( GameMode.valueOf(button.getId())); } catch (IllegalArgumentException ex) {}
+    }
   }
 
 
@@ -71,38 +76,44 @@ public class Controller {
     if (isLeftKey(keyStr)) {
       if (leftKeyStack.contains(LeftPlayerKey.valueOf(keyStr))) {
         leftKeyStack.remove(LeftPlayerKey.valueOf(keyStr));
+        leftKeyAction();
       }
     }
     else if (isRightKey(keyStr)) {
       if (rightKeyStack.contains(RightPlayerKey.valueOf(keyStr))) {
         rightKeyStack.remove(RightPlayerKey.valueOf(keyStr));
+        rightKeyAction();
       }
     }
   }
 
 
   private void leftKeyAction() {
-    if (leftTimer != null) leftTimer.stop();
-    leftTimer = new Timeline(new KeyFrame(Duration.millis(1000), event -> { 
-      if (!leftKeyStack.isEmpty()) {
-        model.controlPlayerFighter(leftKeyStack.peek(), FighterSide.left);
-      }   
-    }));
-    leftTimer.setCycleCount(Animation.INDEFINITE);
-    leftTimer.setRate(60);
-    leftTimer.play();
+    // if (leftTimer != null) leftTimer.stop();
+    // leftTimer = new Timeline(new KeyFrame(Duration.millis(1000), event -> { 
+    //   if (!leftKeyStack.isEmpty()) {
+    //     model.controlPlayerFighter(leftKeyStack.peek(), FighterSide.left);
+    //   }   
+    // }));
+    // leftTimer.setCycleCount(Animation.INDEFINITE);
+    // leftTimer.setRate(60);
+    // leftTimer.play();
+    if (!leftKeyStack.isEmpty()) model.controlPlayerFighter(leftKeyStack.peek(), FighterSide.left);
+    else model.controlPlayerFighter(null, FighterSide.left);
   }
 
 
   private void rightKeyAction() {
-    if (rightTimer != null) rightTimer.stop();
-    rightTimer = new Timeline(new KeyFrame(Duration.millis(1000), event -> { 
-      if (!rightKeyStack.isEmpty()) {
-        model.controlPlayerFighter(rightKeyStack.peek(), FighterSide.right);
-      }   
-    }));
-    rightTimer.setCycleCount(Animation.INDEFINITE);
-    rightTimer.setRate(60);
-    rightTimer.play();
+    // if (rightTimer != null) rightTimer.stop();
+    // rightTimer = new Timeline(new KeyFrame(Duration.millis(1000), event -> { 
+    //   if (!rightKeyStack.isEmpty()) {
+    //     model.controlPlayerFighter(rightKeyStack.peek(), FighterSide.right);
+    //   }   
+    // }));
+    // rightTimer.setCycleCount(Animation.INDEFINITE);
+    // rightTimer.setRate(60);
+    // rightTimer.play();
+    if (!rightKeyStack.isEmpty()) model.controlPlayerFighter(rightKeyStack.peek(), FighterSide.right);
+    else model.controlPlayerFighter(null, FighterSide.right);
   }
 }

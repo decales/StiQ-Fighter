@@ -20,4 +20,12 @@ public class PlayerFighter extends Fighter {
     Object[] keys = (side == FighterSide.left) ? LeftPlayerKey.values() : RightPlayerKey.values();
     for (int i = 0; i < ActionState.values().length - 1; i++) keyActionMap.put(keys[i], ActionState.values()[i]);
   }
+
+  // @Override
+  // public boolean executeAction(ActionState action) {
+  //
+  //
+  //
+  //   return false;
+  // }
 }
