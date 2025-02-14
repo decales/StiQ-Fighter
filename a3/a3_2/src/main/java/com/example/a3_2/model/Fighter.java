@@ -20,11 +20,13 @@ public abstract class Fighter {
 
   public int initHealthPoints;
   public int healthPoints;
-  public int attackDamage;
+  public int attackWindupDuration;
   public int attackDuration;
+  public int attackResetDuration;
+  public int preBlockDuration;
+  public int postBlockDuration;
   public boolean isInvulnerable;
   public int invulnerabilityDuration;
-  public boolean isParried;
   public int parriedDuration;
   public boolean canParry;
   public int parryWindowDuration;
@@ -50,24 +52,27 @@ public abstract class Fighter {
     this.side = side;
 
     // Stat-based attributes
-    // all status and animation durations are in frames
-    initHealthPoints = 100;
+    // all status and animation durations are in frames, 60 fps
+    initHealthPoints = 10;
     healthPoints = initHealthPoints;
-    attackDamage = 10;
-    attackDuration = 48;
-    invulnerabilityDuration = 60;
+    attackWindupDuration = 21;
+    attackDuration = 12;
+    attackResetDuration = 15;
+    preBlockDuration = 18;
+    postBlockDuration = 24;
+    invulnerabilityDuration = 75;
     parriedDuration = 180;
-    parryWindowDuration = 15;
+    parryWindowDuration = 5;
 
     // Position-based attributes
-    width = viewWidth * 0.075;
-    height = viewHeight * 0.4;
+    height = viewWidth * 0.3; // main scaler
+    width = height * 0.32;
     minX = 0;
     maxX = viewWidth;
     initX = (side == FighterSide.left) ? viewWidth * 0.2 - width : viewWidth * 0.8;
-    initY = viewHeight * 0.667 - height;
+    initY = viewHeight * 0.75 - height;
     deltaX = (viewWidth * 0.0025);
-    attackReach = width * 3;
+    attackReach = width * 2.85;
     attackRadius = width * 0.05;
     
     updatePosition(initX, initY);
@@ -75,9 +80,9 @@ public abstract class Fighter {
 
 
   public void reset() {
+    action = ActionState.idle;
     healthPoints = initHealthPoints;
     isInvulnerable = false;
-    isParried = false;
     updatePosition(initX, initY);
   }
 
@@ -150,23 +155,25 @@ public abstract class Fighter {
 
   private void attack() {
     action = ActionState.attacking;
-    // attack comes out on frame 24 reaches its peak range on frames 30 - 33 
-    double attackDeltaX =  ((side == FighterSide.left) ? attackReach : -attackReach) / 8;
+    // entire attack animation is 48 frames
+    // attack comes out on frame 24 and reaches its peak range on frames 30 - 33 
+    double attackDeltaX =  ((side == FighterSide.left) ? attackReach : -attackReach) / attackDuration;
 
     // wind-up animation
     actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e0 -> actionFrame++));
-    actionTimer.setCycleCount(24);
+    actionTimer.setCycleCount(attackWindupDuration);
     actionTimer.setOnFinished(e1 -> { 
       // thrust animation
       attackY += attackRadius; // lowers attack hitbox so that it can hit the opponent hitbox
       actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e2 -> { attackX += attackDeltaX; actionFrame++; }));
-      actionTimer.setCycleCount(8);
+      actionTimer.setCycleCount(attackDuration);
       actionTimer.setOnFinished( e3-> {
-        // wind-down animation
+        // reset animation
         resetAttackHitbox();
         actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e2 -> actionFrame++));
         actionTimer.setOnFinished(e4 -> action = ActionState.idle);
-        actionTimer.setCycleCount(attackDuration - 32);
+        actionTimer.setCycleCount(attackResetDuration);
+
         actionTimer.play();
       });
       actionTimer.play();
@@ -179,7 +186,7 @@ public abstract class Fighter {
     action = ActionState.preBlocking;
     actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e -> actionFrame++ ));
     actionTimer.setOnFinished(e -> block());  
-    actionTimer.setCycleCount(18);
+    actionTimer.setCycleCount(preBlockDuration);
     actionTimer.play();
   }
 
@@ -197,7 +204,7 @@ public abstract class Fighter {
     this.action = ActionState.postBlocking;
     actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e -> actionFrame++ ));
     actionTimer.setOnFinished(e -> { this.action = ActionState.idle; executeAction(action);});
-    actionTimer.setCycleCount(24);
+    actionTimer.setCycleCount(postBlockDuration);
     actionTimer.play();
   }
 
@@ -212,6 +219,16 @@ public abstract class Fighter {
   }
 
 
+  private void startParriedTimer() {
+    // timer to reset parried status after delay
+    action = ActionState.parried;
+    Timeline parriedTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration)));
+    parriedTimer.setCycleCount(parriedDuration);
+    parriedTimer.setOnFinished(e -> action = ActionState.idle);
+    parriedTimer.play();
+  }
+
+
   private void startInvulnerableTimer() {
     // timer to reset invulnerability status after delay
     isInvulnerable =  true;
@@ -221,16 +238,6 @@ public abstract class Fighter {
     invulnerableTimer.play();
   }
 
-
-  private void startParriedTimer() {
-    // timer to reset parried status after delay
-    isParried =  true;
-    Timeline parriedTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration)));
-    parriedTimer.setCycleCount(parriedDuration);
-    parriedTimer.setOnFinished(e -> isParried = false);
-    parriedTimer.play();
-  }
-  
 
   public boolean detectHit(Fighter opponent) {
     // only check for hit if the opponent is attacking and the fighter was not already recently hit
@@ -244,9 +251,8 @@ public abstract class Fighter {
         } 
         else { // fighter takes damage
           // take extra damage when fighter is hit while in parried status
-          double damageMultiplier = 1;
-          if (isParried) { isParried = false; damageMultiplier = 3; }
-          healthPoints -= opponent.attackDamage * damageMultiplier;
+          if (action == ActionState.parried) { action = ActionState.idle; healthPoints -= 3; }
+          else healthPoints -= 1;
 
           // fighter is temporarily invulnerable after taking damage
           startInvulnerableTimer();

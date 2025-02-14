@@ -11,8 +11,6 @@ public class GameState {
   ActionState opponentAction;
   double healthPoints;
   double opponentHealthPoints;
-  boolean isParried;
-  boolean opponentIsParried;
   boolean isInvulnerable;
   boolean opponentIsInvulnerable;
   double distanceToOpponent;
@@ -22,9 +20,6 @@ public class GameState {
 
     healthPoints = self.healthPoints;
     opponentHealthPoints = opponent.healthPoints;
-
-    isParried = self.isParried;
-    opponentIsParried = opponent.isParried;
 
     isInvulnerable = self.isInvulnerable;
     opponentIsInvulnerable = opponent.isInvulnerable;
@@ -45,7 +40,6 @@ public class GameState {
   public int hashCode() {
     return Objects.hash(
         healthPoints, opponentHealthPoints,
-        isParried, opponentIsParried, 
         isInvulnerable, opponentIsInvulnerable,
         inAttackRange);
   }

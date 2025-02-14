@@ -50,12 +50,12 @@ public class ComputerFighter extends Fighter {
       if (action == ActionState.attacking && !currentState.inAttackRange) reward -= 20;
 
       reward += (currentState.inAttackRange) ? 20 : -20; // computer close enough to attack opponent
-      if (currentState.isParried && !previousState.isParried) reward -= 25; // was parried by opponent
+      // if (currentState.isParried && !previousState.isParried) reward -= 25; // was parried by opponent
       if (currentState.healthPoints < previousState.healthPoints) { // was hit by opponent
         if (currentState.healthPoints <= 0) reward -= 100; // hit taken resulted in death
         else reward -= 10;
       }
-      if (currentState.opponentIsParried && !previousState.opponentIsParried) reward += 25; // parried the opponent
+      // if (currentState.opponentIsParried && !previousState.opponentIsParried) reward += 25; // parried the opponent
       if (currentState.opponentHealthPoints < previousState.opponentHealthPoints) { // hit the opponent
         if (currentState.healthPoints <= 0) reward += 100; // hit given killed the opponent
         else reward += 10;
