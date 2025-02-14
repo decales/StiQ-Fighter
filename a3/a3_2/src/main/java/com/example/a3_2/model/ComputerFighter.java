@@ -6,9 +6,9 @@ import java.util.Random;
 
 public class ComputerFighter extends Fighter {
 
-  public Map<GameState, Map<ActionState, Double>> qTable;
+  public Map<GameState, Map<Action, Double>> qTable;
   private double alpha, gamma, epsilon;
-  private ActionState previousAction;
+  private Action previousAction;
   private GameState previousState;
   private GameState currentState;
   private Random random;
@@ -18,11 +18,9 @@ public class ComputerFighter extends Fighter {
     super(side, viewWidth, viewHeight);
 
     qTable = new HashMap<>();
-
     alpha = 0.5; // learning rate - conservative learning <-> aggressive learning
     gamma = 0.1; // discount factor - short-term rewards <-> long-term rewards
     epsilon = 0.05; // exploration rate - known action <-> random action
-
     random = new Random();
   }
 
@@ -36,7 +34,7 @@ public class ComputerFighter extends Fighter {
     double newQ = previousQ + alpha * (reward + gamma * maxQ - previousQ); // left side of formula, updated Q value 
 
     if (!qTable.containsKey(previousState)) {
-      HashMap<ActionState, Double> actionValue = new HashMap<>();
+      HashMap<Action, Double> actionValue = new HashMap<>();
       actionValue.put(previousAction, newQ);
       qTable.put(previousState, actionValue);
     }
@@ -49,7 +47,7 @@ public class ComputerFighter extends Fighter {
 
       int reward = 0;
 
-      if (isAttacking() && !currentState.inAttackRange) reward -= 20;
+      if (action == ActionState.attacking && !currentState.inAttackRange) reward -= 20;
 
       reward += (currentState.inAttackRange) ? 20 : -20; // computer close enough to attack opponent
       if (currentState.isParried && !previousState.isParried) reward -= 25; // was parried by opponent
@@ -72,17 +70,17 @@ public class ComputerFighter extends Fighter {
 
     previousState = currentState; // keep track of previous state for reference in determining the value of an action
     currentState = new GameState(this, opponent); // update state of game from computer's point of view
-    ActionState nextAction = null;
+    Action nextAction = null;
 
     // explore value of executing random action or choose next best action from qTable
-    if (random.nextDouble(1.0) < epsilon) nextAction = ActionState.values()[random.nextInt(ActionState.values().length - 1)];
+    if (random.nextDouble(1.0) < epsilon) nextAction = Action.values()[random.nextInt(ActionState.values().length - 1)];
     else {
-      Map<ActionState, Double> actionValue = qTable.get(currentState);
+      Map<Action, Double> actionValue = qTable.get(currentState);
       if (actionValue != null) {
         
         double maxValue = Integer.MIN_VALUE;
         for (Object key : actionValue.keySet().toArray() ) {
-          if (key instanceof ActionState actionKey) {
+          if (key instanceof Action actionKey) {
 
             if (actionValue.get(actionKey) > maxValue) {
               nextAction = actionKey;
@@ -91,13 +89,13 @@ public class ComputerFighter extends Fighter {
           }
         }
       }
-      else nextAction = ActionState.values()[random.nextInt(ActionState.values().length - 1)];
+      else nextAction = Action.values()[random.nextInt(ActionState.values().length - 1)];
     }
 
-    ActionState previousAction = action;
-    if (executeAction(nextAction)) {
-      this.previousAction = previousAction;
-      scoreAction();
-    }
+    // Action previousAction = action;
+    // if (executeAction(nextAction)) {
+    //   this.previousAction = previousAction;
+    //   scoreAction();
+    // }
   }
 }

@@ -66,6 +66,7 @@ public class Model {
     leftFighter.detectHit(rightFighter);
     rightFighter.detectHit(leftFighter);
     checkReset();
+    System.out.println(String.format("%s", leftFighter.action));
     updateSubscribers();
   }
 
@@ -126,11 +127,11 @@ public class Model {
 
     if (gameMode == GameMode.PvC && side == FighterSide.left) {
       fighter = (PlayerFighter) leftFighter;
-      fighter.executeAction((key == null) ? ActionState.idle : fighter.keyActionMap.get(key));
+      fighter.executeAction(fighter.keyActionMap.get(key));
     }
     else if (gameMode == GameMode.PvP) {
       fighter = (side == FighterSide.left) ? (PlayerFighter) leftFighter : (PlayerFighter) rightFighter;
-      fighter.executeAction((key == null) ? ActionState.idle : fighter.keyActionMap.get(key));
+      fighter.executeAction(fighter.keyActionMap.get(key));
     }
   }
 }

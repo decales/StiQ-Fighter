@@ -14,17 +14,17 @@ public class GameView extends Pane implements PublishSubscribe {
   private HealthBar rightHealthBar;
 
   public GameView() {
-     
+    leftFighterView = new FighterView();
+    rightFighterView = new FighterView();
+    getChildren().addAll(leftFighterView, rightFighterView);
   }
 
 
   public void update(AppState appState, Fighter leftFighter, Fighter rightFighter) {
     if (appState == AppState.inGame) {
       setVisible(true);
-      getChildren().clear();
-      FighterView leftFighterView = new FighterView(leftFighter);
-      FighterView rightFighterView = new FighterView(rightFighter);
-      getChildren().addAll(leftFighterView, rightFighterView);
+      leftFighterView.updateSprite(leftFighter);
+      rightFighterView.updateSprite(rightFighter);
     }
     else setVisible(false);
   }

@@ -6,25 +6,20 @@ import com.example.a3_2.model.Model;
 import com.example.a3_2.model.Fighter.FighterSide;
 import com.example.a3_2.model.Model.GameMode;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.util.Duration;
 
 public class Controller {
   
-  public enum LeftPlayerKey { Z, X, C, V, D, F };
-  public enum RightPlayerKey { N, M, COMMA, PERIOD, K, L };
+  // keys mapped in order to left, right, attack, block
+  public enum LeftPlayerKey { A, S, Q, W };
+  public enum RightPlayerKey { K, L, I, O };
 
   private Model model;
   private Stack<LeftPlayerKey> leftKeyStack;
   private Stack<RightPlayerKey> rightKeyStack;
-  private Timeline leftTimer;
-  private Timeline rightTimer;
 
   public Controller(Model model){
     this.model = model;
@@ -75,7 +70,7 @@ public class Controller {
 
     if (isLeftKey(keyStr)) {
       if (leftKeyStack.contains(LeftPlayerKey.valueOf(keyStr))) {
-        leftKeyStack.remove(LeftPlayerKey.valueOf(keyStr));
+        leftKeyStack.remove(LeftPlayerKey.valueOf(keyStr));  
         leftKeyAction();
       }
     }
@@ -89,31 +84,11 @@ public class Controller {
 
 
   private void leftKeyAction() {
-    // if (leftTimer != null) leftTimer.stop();
-    // leftTimer = new Timeline(new KeyFrame(Duration.millis(1000), event -> { 
-    //   if (!leftKeyStack.isEmpty()) {
-    //     model.controlPlayerFighter(leftKeyStack.peek(), FighterSide.left);
-    //   }   
-    // }));
-    // leftTimer.setCycleCount(Animation.INDEFINITE);
-    // leftTimer.setRate(60);
-    // leftTimer.play();
-    if (!leftKeyStack.isEmpty()) model.controlPlayerFighter(leftKeyStack.peek(), FighterSide.left);
-    else model.controlPlayerFighter(null, FighterSide.left);
+    model.controlPlayerFighter( ((leftKeyStack.isEmpty()) ? null : leftKeyStack.peek()), FighterSide.left);
   }
 
 
   private void rightKeyAction() {
-    // if (rightTimer != null) rightTimer.stop();
-    // rightTimer = new Timeline(new KeyFrame(Duration.millis(1000), event -> { 
-    //   if (!rightKeyStack.isEmpty()) {
-    //     model.controlPlayerFighter(rightKeyStack.peek(), FighterSide.right);
-    //   }   
-    // }));
-    // rightTimer.setCycleCount(Animation.INDEFINITE);
-    // rightTimer.setRate(60);
-    // rightTimer.play();
-    if (!rightKeyStack.isEmpty()) model.controlPlayerFighter(rightKeyStack.peek(), FighterSide.right);
-    else model.controlPlayerFighter(null, FighterSide.right);
+    model.controlPlayerFighter( ((rightKeyStack.isEmpty()) ? null : rightKeyStack.peek()), FighterSide.right);
   }
 }
