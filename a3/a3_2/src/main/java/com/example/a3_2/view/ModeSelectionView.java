@@ -26,15 +26,15 @@ public class ModeSelectionView extends StackPane implements PublishSubscribe  {
     Button cvcButton = new Button("CvC");
     cvcButton.setId("CvC");
 
+    // add event on-click handlers to buttons
     for (Button button : List.of(pvpButton, pvcButton, cvcButton)) {
       button.setOnAction(controller::handleActionEvent);
       buttonBox.getChildren().add(button);
     }
-
     getChildren().addAll(buttonBox);
   }
 
-  public void update(AppState appState, Fighter leftFighter, Fighter rightFighter) {
+  public void update(AppState appState, int frame, double viewSize, Fighter leftFighter, Fighter rightFighter, int leftWins, int rightWins) {
     setVisible(appState == AppState.selectingMode);
   }
 }

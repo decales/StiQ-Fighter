@@ -3,13 +3,11 @@ package com.example.a3_2;
 import com.example.a3_2.controller.Controller;
 import com.example.a3_2.model.Model;
 import com.example.a3_2.view.GameView;
-import com.example.a3_2.view.HealthBar;
 import com.example.a3_2.view.ModeSelectionView;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
@@ -26,7 +24,7 @@ public class App extends Application {
         double viewHeight = displayHeight * displayRatio;
 
         // model + controller
-        Model model = new Model(viewWidth, viewHeight);
+        Model model = new Model(viewWidth);
         Controller controller = new Controller(model);
 
         // ui components

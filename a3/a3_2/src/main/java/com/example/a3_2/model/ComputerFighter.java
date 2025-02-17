@@ -13,9 +13,9 @@ public class ComputerFighter extends Fighter {
   private GameState currentState;
   private Random random;
   
-  public ComputerFighter(FighterSide side, double viewWidth, double viewHeight) {
+  public ComputerFighter(FighterSide side, double viewSize, int frameRate) {
 
-    super(side, viewWidth, viewHeight);
+    super(side, viewSize, frameRate);
 
     qTable = new HashMap<>();
     alpha = 0.5; // learning rate - conservative learning <-> aggressive learning
@@ -47,7 +47,7 @@ public class ComputerFighter extends Fighter {
 
       int reward = 0;
 
-      if (action == ActionState.attacking && !currentState.inAttackRange) reward -= 20;
+      if (actionState == ActionState.attacking && !currentState.inAttackRange) reward -= 20;
 
       reward += (currentState.inAttackRange) ? 20 : -20; // computer close enough to attack opponent
       // if (currentState.isParried && !previousState.isParried) reward -= 25; // was parried by opponent
@@ -73,7 +73,7 @@ public class ComputerFighter extends Fighter {
     Action nextAction = null;
 
     // explore value of executing random action or choose next best action from qTable
-    if (random.nextDouble(1.0) < epsilon) nextAction = Action.values()[random.nextInt(ActionState.values().length - 1)];
+    if (random.nextDouble(1.0) < epsilon) nextAction = Action.values()[random.nextInt(Action.values().length - 1)];
     else {
       Map<Action, Double> actionValue = qTable.get(currentState);
       if (actionValue != null) {
@@ -89,13 +89,12 @@ public class ComputerFighter extends Fighter {
           }
         }
       }
-      else nextAction = Action.values()[random.nextInt(ActionState.values().length - 1)];
+      else nextAction = Action.values()[random.nextInt(Action.values().length - 1)];
     }
 
-    // Action previousAction = action;
-    // if (executeAction(nextAction)) {
-    //   this.previousAction = previousAction;
-    //   scoreAction();
-    // }
+    if (executeAction(nextAction)) {
+      System.out.println(String.format("Computer executing %s", nextAction));
+      scoreAction();
+    }
   }
 }

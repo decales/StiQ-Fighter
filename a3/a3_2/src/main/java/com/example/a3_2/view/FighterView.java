@@ -10,18 +10,17 @@ import javafx.animation.Timeline;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
-public class FighterView extends Pane {
+public class FighterView extends Pane { // TODO should extend ImageView when hitbox debugging no longer needed
 
   private HashMap<ActionState, Image[]> spriteMap;
   private ImageView sprite;
+  private int frameRepetition;
   private double fighterRatio;
   private Timeline blinkTimer;
-  private int frameRepetitionCount;
   private Rectangle hbox;
   private Circle whbox;
 
@@ -29,22 +28,17 @@ public class FighterView extends Pane {
 
     spriteMap = new HashMap<ActionState, Image[]>();
     sprite = new ImageView();
+    frameRepetition = 3; // number of times each frame repeats to control animation speed
     fighterRatio = 46.0 / 168.0; // width of fighter based on where it is drawn in the sprite, used for hitbox scaling purposes
     blinkTimer = new Timeline(new KeyFrame(Duration.millis(75), e -> sprite.setVisible(!sprite.isVisible())));
-    frameRepetitionCount = 3;
 
     // Initialize a map of all sprite frames for each action
     for (ActionState action : ActionState.values()) {
       if (action == ActionState.parried) continue;
-      int actionSpriteCount = new File(getClass().getResource( String.format("/fighter/%s", action)).getPath()).listFiles().length; // # sprite files
-      Image[] actionSprites = new Image[actionSpriteCount * frameRepetitionCount]; // array size is total number of frames in the animation 
-
-      int spriteNumber = 0;
-      for (int i = 0; i < actionSprites.length; i++) {
-        if (i % frameRepetitionCount == 0) spriteNumber ++;
-        actionSprites[i] = new Image(getClass().getResource(String.format("/fighter/%s/%s_%04d.png", action, action, spriteNumber)).toString()); 
-      }
-      spriteMap.put(action, actionSprites);
+      File[] spriteFiles = new File(getClass().getResource( String.format("/fighter/%s", action)).getPath()).listFiles();
+      Image[] sprites = new Image[spriteFiles.length];
+      for (int i = 0; i < sprites.length; i++) sprites[i] = new Image(spriteFiles[i].toURI().toString());
+      spriteMap.put(action, sprites);
     }
 
     hbox = new Rectangle();
@@ -53,7 +47,7 @@ public class FighterView extends Pane {
     getChildren().addAll(hbox, whbox, sprite);
   }
 
-  public void updateSprite(Fighter fighter) {
+  public void update(Fighter fighter) {
 
     // hbox.setX(fighter.posX);
     // hbox.setY(fighter.posY);
@@ -67,15 +61,22 @@ public class FighterView extends Pane {
     // whbox.setFill(Color.RED);
 
     // on each frame, update the sprite with the frame of the fighter's current action
-    ActionState action;
+    ActionState actionState;
     if (fighter.side == FighterSide.right) {
-      if (fighter.action == ActionState.movingRight) action = ActionState.movingLeft;
-      else if (fighter.action == ActionState.movingLeft) action = ActionState.movingRight;
-      else action = fighter.action;
-    } else action = fighter.action;
-    sprite.setImage(spriteMap.get(action)[fighter.actionFrame % spriteMap.get(action).length]);
+      if (fighter.actionState == ActionState.movingRight) actionState = ActionState.movingLeft;
+      else if (fighter.actionState == ActionState.movingLeft) actionState = ActionState.movingRight;
+      else actionState = fighter.actionState;
+    } else actionState = fighter.actionState;
 
-    // translate and scale frame depending on which relative side the fighter is on
+
+    // if (actionState == ActionState.preBlocking || actionState == ActionState.blocking || actionState == ActionState.postBlocking) {
+    //   int f = (fighter.actionFrame / frameRepetition) % spriteMap.get(actionState).length;
+    //   System.out.println(String.format("%s: %d", actionState, f));
+    // }
+
+    sprite.setImage(spriteMap.get(actionState)[(fighter.actionFrame / frameRepetition) % spriteMap.get(actionState).length]);
+
+    // scale and translate frame depending on which relative side the fighter is on
     sprite.setFitHeight(fighter.height);
     sprite.setFitWidth(sprite.getFitHeight() * sprite.getImage().getWidth() / sprite.getImage().getHeight());
     sprite.setX(fighter.posX);

@@ -4,5 +4,5 @@ import com.example.a3_2.model.Model.AppState;
 
 public interface PublishSubscribe {
 
-  void update(AppState appState,  Fighter leftFighter, Fighter rightFighter);
+  void update(AppState appState, int frame, double viewSize, Fighter leftFighter, Fighter rightFighter, int leftWins, int rightWins);
 }

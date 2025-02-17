@@ -3,7 +3,6 @@ package com.example.a3_2.model;
 import java.util.Arrays;
 import java.util.List;
 
-import com.example.a3_2.model.Fighter.ActionState;
 import com.example.a3_2.model.Fighter.FighterSide;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -16,18 +15,24 @@ public class Model {
   public enum GameMode { PvP, PvC, CvC }
 
   private List<PublishSubscribe> subscribers;
-  private double viewWidth, viewHeight;
+  private double viewSize;
   private AppState appState;
 
   private Timeline gameTimer;
+  private int frameRate;
+  private int frame;
+
   private GameMode gameMode;
   private Fighter leftFighter, rightFighter;
   private int leftWins, rightWins;
 
-  public Model(double viewWidth, double viewHeight) {
+  public Model(double viewSize) {
 
-    this.viewWidth = viewWidth;
-    this.viewHeight = viewHeight;
+    frameRate = 60;
+    gameTimer = new Timeline(new KeyFrame(Duration.millis(1000 / frameRate), e -> handleGameUpdates()));
+    gameTimer.setCycleCount(Animation.INDEFINITE);
+
+    this.viewSize = viewSize;
     appState = AppState.selectingMode;
   }
 
@@ -39,34 +44,31 @@ public class Model {
 
     switch(gameMode) {
       case PvP -> { // player vs player
-        leftFighter = new PlayerFighter(FighterSide.left, viewWidth, viewHeight);
-        rightFighter = new PlayerFighter(FighterSide.right, viewWidth, viewHeight);
+        leftFighter = new PlayerFighter(FighterSide.left, viewSize, frameRate);
+        rightFighter = new PlayerFighter(FighterSide.right, viewSize, frameRate);
       }
       case PvC -> { // player vs computer
-        leftFighter = new PlayerFighter(FighterSide.left, viewWidth, viewHeight);
-        rightFighter = new ComputerFighter(FighterSide.right, viewWidth, viewHeight);
+        leftFighter = new PlayerFighter(FighterSide.left, viewSize, frameRate);
+        rightFighter = new ComputerFighter(FighterSide.right, viewSize, frameRate);
       }
       case CvC -> { // computer vs computer
-        leftFighter = new ComputerFighter(FighterSide.left, viewWidth, viewHeight);
-        rightFighter = new ComputerFighter(FighterSide.right, viewWidth, viewHeight);
+        leftFighter = new ComputerFighter(FighterSide.left, viewSize, frameRate);
+        rightFighter = new ComputerFighter(FighterSide.right, viewSize, frameRate);
       }
     }
-
-    // start game update timer
-    gameTimer = new Timeline(new KeyFrame(Duration.millis(1000), e -> handleGameUpdates()));
-    gameTimer.setCycleCount(Animation.INDEFINITE);
-    gameTimer.setRate(60);
-    gameTimer.play();
+    gameTimer.play(); // start update timer to animate game
   }
 
 
   private void handleGameUpdates() {
+    // frame = (frame + 1) % frameRate;
+    frame ++;
+
     faceFighers();
     controlComputerFighters(); // only applies in PvC or CvC, but called regardless
     leftFighter.detectHit(rightFighter);
     rightFighter.detectHit(leftFighter);
     checkReset();
-    System.out.println(String.format("%s", leftFighter.action));
     updateSubscribers();
   }
 
@@ -80,7 +82,7 @@ public class Model {
 
   private void updateSubscribers() {
     for (PublishSubscribe subscriber : subscribers) {
-      subscriber.update(appState, leftFighter, rightFighter);
+      subscriber.update(appState, frame, viewSize, leftFighter, rightFighter, leftWins, rightWins);
     }
   }
 
@@ -103,10 +105,10 @@ public class Model {
 
   private void checkReset() {
     // reset the fight when a player wins
-    if (leftFighter.healthPoints <= 0 || rightFighter.healthPoints <=0) {
+    if (leftFighter.healthPoints <= 0 || rightFighter.healthPoints <= 0) {
 
-      if (leftFighter.healthPoints <= 0) leftWins ++;
-      else rightWins ++;
+      if (leftFighter.healthPoints <= 0) rightWins ++;
+      else leftWins ++;
 
       leftFighter.reset();
       rightFighter.reset();
