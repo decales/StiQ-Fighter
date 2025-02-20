@@ -19,7 +19,7 @@ public class HealthBar extends HBox {
   public HealthBar(FighterSide side) {
 
     this.side = side;
-    frameRepetition = 4; 
+    frameRepetition = 5; 
     animationInterval = 120; // health sprites animate every x frames
 
     // initialize sprite array

@@ -10,6 +10,7 @@ import javafx.animation.Timeline;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
@@ -47,7 +48,7 @@ public class FighterView extends Pane { // TODO should extend ImageView when hit
     getChildren().addAll(hbox, whbox, sprite);
   }
 
-  public void update(Fighter fighter) {
+  public void update(Fighter fighter, int frame) {
 
     // hbox.setX(fighter.posX);
     // hbox.setY(fighter.posY);
@@ -69,12 +70,9 @@ public class FighterView extends Pane { // TODO should extend ImageView when hit
     } else actionState = fighter.actionState;
 
 
-    // if (actionState == ActionState.preBlocking || actionState == ActionState.blocking || actionState == ActionState.postBlocking) {
-    //   int f = (fighter.actionFrame / frameRepetition) % spriteMap.get(actionState).length;
-    //   System.out.println(String.format("%s: %d", actionState, f));
-    // }
-
-    sprite.setImage(spriteMap.get(actionState)[(fighter.actionFrame / frameRepetition) % spriteMap.get(actionState).length]);
+    if (fighter.actionState != ActionState.parried) {
+      sprite.setImage(spriteMap.get(actionState)[(fighter.actionFrame / frameRepetition) % (spriteMap.get(actionState).length)]);
+    }
 
     // scale and translate frame depending on which relative side the fighter is on
     sprite.setFitHeight(fighter.height);

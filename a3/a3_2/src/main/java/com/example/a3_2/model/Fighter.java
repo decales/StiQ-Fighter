@@ -1,30 +1,22 @@
 package com.example.a3_2.model;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.util.Duration;
-
 public abstract class Fighter {
 
-  public enum Action { moveLeft, moveRight, attack, block };
-  public enum ActionState { idle, movingLeft, movingRight, attacking, preBlocking, blocking, postBlocking, parried };
   public enum FighterSide { left, right };
+  public enum Action { moveLeft, moveRight, attack, block };
+  public enum ActionState { idle, movingLeft, movingRight, preAttacking, attacking, postAttacking, preBlocking, blocking, postBlocking, deflecting, parried };
   
   public int actionFrame;
+  public int invulnerableFrame;
+  public int parryFrame;
+  public int executeFrame;
   public double frameDuration;
-  private Timeline actionTimer;
 
   public ActionState actionState;
   public FighterSide side;
 
   public int initHealthPoints;
   public int healthPoints;
-  public int attackWindupDuration;
-  public int attackDuration;
-  public int attackResetDuration;
-  public int preBlockDuration;
-  public int postBlockDuration;
   public boolean isInvulnerable;
   public int invulnerabilityDuration;
   public int parriedDuration;
@@ -45,7 +37,6 @@ public abstract class Fighter {
 
     // action/animation attributes
     frameDuration = 1000 / frameRate;
-    actionTimer = new Timeline();
 
     // State-based attributes
     actionState = ActionState.idle;
@@ -55,11 +46,6 @@ public abstract class Fighter {
     // all status and animation durations are in frames
     initHealthPoints = 8;
     healthPoints = initHealthPoints;
-    attackWindupDuration = 21;
-    attackDuration = 12;
-    attackResetDuration = 15;
-    preBlockDuration = 18;
-    postBlockDuration = 24;
     invulnerabilityDuration = 75;
     parriedDuration = 180;
     parryWindowDuration = 5;
@@ -72,52 +58,165 @@ public abstract class Fighter {
     initX = (side == FighterSide.left) ? viewSize * 0.2 - width : viewSize * 0.8;
     initY = viewSize * 0.4667 - height;
     deltaX = (viewSize * 0.0025);
-    attackReach = width * 2.85;
     attackRadius = width * 0.05;
+    attackReach = (width * 2.8) + attackRadius;
     
     updatePosition(initX, initY);
   }
 
 
   public void reset() {
-    actionState = ActionState.idle;
     healthPoints = initHealthPoints;
     isInvulnerable = false;
     updatePosition(initX, initY);
   }
 
 
-  private boolean isAnimationLocked() {
+  protected boolean isAnimationLocked() {
     // fighter is locked into certain animations based on action state
-    return actionState == ActionState.attacking 
+    return actionState == ActionState.preAttacking
+        || actionState == ActionState.attacking
+        || actionState == ActionState.postAttacking
         || actionState == ActionState.preBlocking 
         || actionState == ActionState.postBlocking
+        || actionState ==  ActionState.deflecting
         || actionState == ActionState.parried;
   }
 
 
-  public boolean executeAction(Action action) {
-    if (!isAnimationLocked()) {
-      
-      actionTimer.stop(); // stop the timer to cancel previous animation
-      actionFrame = 0; // reset frame count for next animation
+  public void sync(ActionState actionState, int frame) {
+    // sync action state of fighter with current frame passed from model to animate actions
+    
+    actionFrame = frame - executeFrame; // execFrame is the frame an action begins execution from executeAction(), passed from model
+    this.actionState = actionState;
 
-      // if transitioning from a block, play block wind-down animation then execute the next action
-      if (actionState == ActionState.blocking) postBlock(action);
-      else { // otherwise execute action normally
-        switch(action) {
-          case moveLeft -> moveLeft();
-          case moveRight -> moveRight();
-          case attack -> attack();
-          case block -> preBlock();
-          case null -> actionState = ActionState.idle;
-        }
-        return true;
+    // invulnerable and parry frames are set on the frame an opponent attack hits the fighter from detectHit() 
+    isInvulnerable = (frame - invulnerableFrame < invulnerabilityDuration);
+    canParry = (frame - parryFrame < parryWindowDuration);
+
+    switch(actionState) {
+      // idle
+      case idle -> {}
+      // move left
+      case movingLeft -> {
+        updatePosition(posX - deltaX, posY);
       }
+      // move right
+      case movingRight -> {
+        updatePosition(posX + deltaX, posY);
+      }
+      // pre-attack - wind-up animation
+      case preAttacking -> {
+        if (actionFrame == 20) {
+          executeFrame = frame;
+          sync(ActionState.attacking, frame);
+        }
+      }
+      // attack - can damage opponent
+      case attacking -> {
+        if (actionFrame == 11) {
+          executeFrame = frame;
+          resetAttackHitbox();
+          sync(ActionState.postAttacking, frame);
+        }
+        else attackX += ((side == FighterSide.left) ? attackReach : -attackReach) / 12; // move attack hitbox each frame
+      }
+      // post-attack - wind-down animation 
+      case postAttacking -> {
+        if (actionFrame == 26) {
+          executeFrame = frame;
+          sync(ActionState.idle, frame);
+        }
+      }
+      // pre-block - wind-up animation
+      case preBlocking -> {
+        if (actionFrame == 17) {
+          executeFrame = frame;
+          parryFrame = frame;
+          sync(ActionState.blocking, frame);
+        }
+      }
+      // block - cannot take damage from opponent
+      case blocking -> { }
+      // post-block - wind-down animation
+      case postBlocking -> {
+        if (actionFrame == 26) {
+          executeFrame = frame;
+          sync(ActionState.idle, frame);
+        }
+      }
+      // deflect - animation after blocking an attack from opponent
+      case deflecting -> {
+        if (actionFrame == 20) {
+          executeFrame = frame;
+          sync(ActionState.idle, frame);
+        }
+      }
+      // parried - animation after well timed block from opponent, fighter is stunned and takes triple damage
+      case parried -> {
+        if (actionFrame == 120) {
+          executeFrame = frame;
+          sync(ActionState.idle, frame);
+        }
+      }
+    }
+  }
+
+
+  public boolean executeAction(Action action, int frame) {
+    if (!isAnimationLocked()) {
+
+      // save the frame the action is is executed on for animation length purposes
+      executeFrame = frame + 1; // +1 because of async update order between gameTimer and inputs in model
+
+      if (actionState == ActionState.blocking) {
+        actionState = ActionState.postBlocking;
+        return false;
+      }
+
+      switch(action) {
+        case moveLeft -> actionState = ActionState.movingLeft;
+        case moveRight -> actionState = ActionState.movingRight;
+        case attack -> actionState = ActionState.preAttacking;
+        case block -> actionState = ActionState.preBlocking;
+        case null -> actionState = ActionState.idle;
+      }
+      return true;
     }
     return false;
   }
   
+
+  public void detectHit(Fighter opponent, int frame) {
+    // only check for hit if the opponent is attacking and the fighter was not already recently hit
+    if (opponent.actionState == ActionState.attacking && !isInvulnerable) {
+      // check if fighter hitbox contains opponent attack
+      if (opponent.attackX >= posX && opponent.attackX <= posX + width && opponent.attackY >= posY && opponent.attackY < posY + height) {
+        // check if fighter blocked attack
+        if (actionState == ActionState.blocking) { 
+          // prevent damage and parry the opponent if their attack was blocked within the parry window
+          if (canParry) {
+            opponent.actionState = ActionState.parried;
+            opponent.executeFrame = frame;
+          } 
+          //play deflecting animation
+          actionState = ActionState.deflecting;
+          executeFrame = frame;
+        } 
+        else if (actionState == ActionState.deflecting) { } // prevent damage in deflecting animation
+        else { // fighter takes damage
+          // take extra damage when fighter is hit while in parried status
+          if (actionState == ActionState.parried) { actionState = ActionState.idle; healthPoints -= 3; }
+          else healthPoints -= 1;
+
+          // fighter is temporarily invulnerable after taking damage
+          isInvulnerable = true;
+          invulnerableFrame = frame;
+        }
+      }
+    }
+  }
+
 
   private boolean updatePosition(double posX, double posY) {
     if (posX > minX && posX + width < maxX) {
@@ -130,137 +229,10 @@ public abstract class Fighter {
     return false;
   }
 
+
   private void resetAttackHitbox() {
     // update attack hitbox a constant distance from fighter based which direction fighter is facing
     attackX = posX + ((side == FighterSide.left) ? width : 0);
-    attackY = posY - attackRadius; 
-  }
-
-
-  private void moveLeft() {
-    actionState = ActionState.movingLeft;
-    actionTimer = new Timeline(new KeyFrame (Duration.millis(frameDuration), e -> { updatePosition(posX - deltaX, posY); actionFrame++; }));
-    actionTimer.setCycleCount(Animation.INDEFINITE);
-    actionTimer.play();
-  }
-
-
-  private void moveRight() {
-    actionState = ActionState.movingRight;
-    actionTimer = new Timeline(new KeyFrame (Duration.millis(frameDuration), e -> { updatePosition(posX + deltaX, posY); actionFrame++; }));
-    actionTimer.setCycleCount(Animation.INDEFINITE);
-    actionTimer.play();
-  }
-
-
-  private void attack() {
-    actionState = ActionState.attacking;
-    // entire attack animation is 48 frames
-    // attack comes out on frame 24 and reaches its peak range on frames 30 - 33 
-    double attackDeltaX =  ((side == FighterSide.left) ? attackReach : -attackReach) / attackDuration;
-
-    // wind-up animation
-    actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e0 -> actionFrame++));
-    actionTimer.setCycleCount(attackWindupDuration);
-    actionTimer.setOnFinished(e1 -> { 
-      // thrust animation
-      attackY += attackRadius; // lowers attack hitbox so that it can hit the opponent hitbox
-      actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e2 -> { attackX += attackDeltaX; actionFrame++; }));
-      actionTimer.setCycleCount(attackDuration);
-      actionTimer.setOnFinished(e3 -> {
-        // reset animation
-        resetAttackHitbox();
-        actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e2 -> actionFrame++));
-        actionTimer.setOnFinished(e4 -> actionState = ActionState.idle);
-        actionTimer.setCycleCount(attackResetDuration);
-
-        actionTimer.play();
-      });
-      actionTimer.play();
-    });
-    actionTimer.play();
-  }
-  
-
-  private void preBlock() {
-    actionState = ActionState.preBlocking;
-    actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e -> actionFrame++ ));
-    actionTimer.setOnFinished(e -> block());  
-    actionTimer.setCycleCount(preBlockDuration);
-    actionTimer.play();
-  }
-
-
-  private void block() {
-    actionState = ActionState.blocking;
-    startParryWindowTimer(); // opponent attacks can be parried within short window at start of blocking state
-    actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e -> actionFrame++ ));
-    actionTimer.setCycleCount(Animation.INDEFINITE);
-    actionTimer.play();
-  }
-
-
-  private void postBlock(Action action) {
-    actionState = ActionState.postBlocking;
-    actionTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration), e -> actionFrame++ ));
-    actionTimer.setOnFinished(e -> { actionState = ActionState.idle; executeAction(action);});
-    actionTimer.setCycleCount(postBlockDuration);
-    actionTimer.play();
-  }
-
-
-  private void startParryWindowTimer() {
-    // timer to reset parry window after delay
-    canParry =  true;
-    Timeline parryTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration)));
-    parryTimer.setCycleCount(parryWindowDuration);
-    parryTimer.setOnFinished(e -> canParry = false);
-    parryTimer.play();
-  }
-
-
-  private void startParriedTimer() {
-    // timer to reset parried status after delay
-    actionState = ActionState.parried;
-    Timeline parriedTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration)));
-    parriedTimer.setCycleCount(parriedDuration);
-    parriedTimer.setOnFinished(e -> actionState = ActionState.idle);
-    parriedTimer.play();
-  }
-
-
-  private void startInvulnerableTimer() {
-    // timer to reset invulnerability status after delay
-    isInvulnerable =  true;
-    Timeline invulnerableTimer = new Timeline(new KeyFrame(Duration.millis(frameDuration)));
-    invulnerableTimer.setCycleCount(invulnerabilityDuration);
-    invulnerableTimer.setOnFinished(e -> isInvulnerable = false);
-    invulnerableTimer.play();
-  }
-
-
-  public boolean detectHit(Fighter opponent) {
-    // only check for hit if the opponent is attacking and the fighter was not already recently hit
-    if (opponent.actionState == ActionState.attacking && !isInvulnerable) {
-
-      // check if fighter hitbox contains opponent attack
-      if (opponent.attackX >= posX && opponent.attackX <= posX + width && opponent.attackY >= posY && opponent.attackY < posY + height) {
-        if (actionState == ActionState.blocking) { // check if fighter blocked attack
-          if (canParry) opponent.startParriedTimer(); // prevent damage and parry the opponent if their attack was blocked within the parry window
-          return false; // otherwise simply prevent damage
-        } 
-        else { // fighter takes damage
-          // take extra damage when fighter is hit while in parried status
-          if (actionState == ActionState.parried) { actionState = ActionState.idle; healthPoints -= 3; }
-          else healthPoints -= 1;
-
-          // fighter is temporarily invulnerable after taking damage
-          startInvulnerableTimer();
-          return true;
-        }
-      }
-      return false;
-    }
-    return false;
+    attackY = posY + height / 2; 
   }
 }

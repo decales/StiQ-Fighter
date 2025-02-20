@@ -51,8 +51,8 @@ public class GameView extends Pane implements PublishSubscribe {
       topBar.setMinWidth(viewSize);
       topBar.setPadding(new Insets(viewSize * 0.0075));
 
-      leftFighterView.update(leftFighter);
-      rightFighterView.update(rightFighter);
+      leftFighterView.update(leftFighter, frame);
+      rightFighterView.update(rightFighter, frame);
 
       leftBar.update(viewSize, frame, leftFighter.healthPoints, leftWins);
       rightBar.update(viewSize, frame, rightFighter.healthPoints, rightWins);

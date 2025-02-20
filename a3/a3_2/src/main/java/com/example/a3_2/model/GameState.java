@@ -7,28 +7,29 @@ import com.example.a3_2.model.Fighter.FighterSide;
 
 public class GameState {
 
-  ActionState action;
-  ActionState opponentAction;
-  double healthPoints;
-  double opponentHealthPoints;
-  boolean isInvulnerable;
+  boolean opponentIsAttacking;
+  boolean opponentIsBlocking;
+  boolean opponentIsParried;
   boolean opponentIsInvulnerable;
-  double distanceToOpponent;
+  FighterSide opponentSide;
+  int healthDifference;
   boolean inAttackRange;
 
   public GameState(Fighter self, Fighter opponent) {
 
-    healthPoints = self.healthPoints;
-    opponentHealthPoints = opponent.healthPoints;
-
-    isInvulnerable = self.isInvulnerable;
+    opponentIsAttacking = opponent.actionState == ActionState.attacking;
+    opponentIsBlocking = opponent.actionState == ActionState.preBlocking || opponent.actionState == ActionState.blocking;
+    opponentIsParried = opponent.actionState == ActionState.parried;
     opponentIsInvulnerable = opponent.isInvulnerable;
+    opponentSide = opponent.side;
 
-    // distanceToOpponent = Math.abs(self.posX - opponent.posX);
-    inAttackRange = (self.side == FighterSide.right) 
+    healthDifference = self.healthPoints - opponent.healthPoints; // (-): AI losing   (+): AI winning
+
+    inAttackRange = (self.side == FighterSide.left) 
       ?  (self.posX + self.width + self.attackReach) >= opponent.posX
       :  (self.posX - self.attackReach) <= (opponent.posX + opponent.width);
   }
+
 
 
   public boolean equals(Object object) {
@@ -36,11 +37,16 @@ public class GameState {
     else return false;
   }
 
-  
+
   public int hashCode() {
     return Objects.hash(
-        healthPoints, opponentHealthPoints,
-        isInvulnerable, opponentIsInvulnerable,
-        inAttackRange);
+        opponentIsAttacking,
+        opponentIsBlocking,
+        opponentIsParried,
+        opponentIsInvulnerable,
+        opponentSide,
+        healthDifference,
+        inAttackRange
+    );
   }
 }

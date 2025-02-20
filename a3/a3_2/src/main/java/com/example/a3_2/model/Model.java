@@ -61,14 +61,16 @@ public class Model {
 
 
   private void handleGameUpdates() {
-    // frame = (frame + 1) % frameRate;
     frame ++;
 
     faceFighers();
     controlComputerFighters(); // only applies in PvC or CvC, but called regardless
-    leftFighter.detectHit(rightFighter);
-    rightFighter.detectHit(leftFighter);
+    leftFighter.detectHit(rightFighter, frame);
+    rightFighter.detectHit(leftFighter, frame);
+    leftFighter.sync(leftFighter.actionState, frame);
+    rightFighter.sync(rightFighter.actionState, frame);
     checkReset();
+
     updateSubscribers();
   }
 
@@ -104,22 +106,28 @@ public class Model {
 
 
   private void checkReset() {
-    // reset the fight when a player wins
+    // round reset when fighter wins a round
     if (leftFighter.healthPoints <= 0 || rightFighter.healthPoints <= 0) {
-
       if (leftFighter.healthPoints <= 0) rightWins ++;
       else leftWins ++;
 
       leftFighter.reset();
       rightFighter.reset();
+
+      // full reset when player wins match
+      if (leftWins == 5 || rightWins == 5) {
+        if (leftWins == 5) {}
+        else {}
+        appState = AppState.selectingMode;
+      }
     }
   }
 
 
   private void controlComputerFighters() {
     if (gameMode == GameMode.PvC || gameMode == GameMode.CvC) {
-      ((ComputerFighter) rightFighter).determineAction(leftFighter);
-      if (gameMode == GameMode.CvC) ((ComputerFighter) leftFighter).determineAction(rightFighter);
+      ((ComputerFighter) rightFighter).determineAction(leftFighter, frame);
+      if (gameMode == GameMode.CvC) ((ComputerFighter) leftFighter).determineAction(rightFighter, frame);
     }
   }
   
@@ -129,11 +137,11 @@ public class Model {
 
     if (gameMode == GameMode.PvC && side == FighterSide.left) {
       fighter = (PlayerFighter) leftFighter;
-      fighter.executeAction(fighter.keyActionMap.get(key));
+      fighter.executeAction(fighter.keyActionMap.get(key), frame);
     }
     else if (gameMode == GameMode.PvP) {
       fighter = (side == FighterSide.left) ? (PlayerFighter) leftFighter : (PlayerFighter) rightFighter;
-      fighter.executeAction(fighter.keyActionMap.get(key));
+      fighter.executeAction(fighter.keyActionMap.get(key), frame);
     }
   }
 }
