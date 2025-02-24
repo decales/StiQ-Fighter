@@ -1,15 +1,11 @@
 package com.example.a3_2.controller;
 
 import java.util.Stack;
-
 import com.example.a3_2.model.Model;
 import com.example.a3_2.model.Fighter.FighterSide;
-import com.example.a3_2.model.Model.GameMode;
-
-import javafx.animation.Timeline;
-import javafx.event.ActionEvent;
-import javafx.scene.control.Button;
+import com.example.a3_2.view.MenuButton;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 
 public class Controller {
   
@@ -28,9 +24,9 @@ public class Controller {
   }
 
 
-  public void handleActionEvent(ActionEvent e) {
-    if (e.getSource() instanceof Button button) {
-      try { model.startGame( GameMode.valueOf(button.getId())); } catch (IllegalArgumentException ex) {}
+  public void handleMouseClicked(MouseEvent e) {
+    if (e.getSource() instanceof MenuButton menuButton) {
+      model.startGame(menuButton.gameMode);
     }
   }
 

@@ -10,15 +10,12 @@ import javafx.scene.image.ImageView;
 public class WinMarker extends ImageView {
 
   private Image[] sprites;
-  private FighterSide side;
 
   public WinMarker(FighterSide side) {
 
-    this.side = side;
-
     File[] spriteFiles = new File(getClass().getResource("/wins/").getPath()).listFiles();
     sprites = new Image[spriteFiles.length];
-    for (int i = 0; i < sprites.length; i++) sprites[i] = new Image( spriteFiles[i].toURI().toString());
+    for (int i = 0; i < sprites.length; i++) sprites[i] = new Image(spriteFiles[i].toURI().toString());
 
     // flip sprite for right bar to maintain symmetry
     if (side == FighterSide.right) setScaleX(-1); 

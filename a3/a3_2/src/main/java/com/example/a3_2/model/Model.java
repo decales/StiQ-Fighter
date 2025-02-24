@@ -18,7 +18,7 @@ public class Model {
   private double viewSize;
   private AppState appState;
 
-  private Timeline gameTimer;
+  private Timeline animationTimer;
   private int frameRate;
   private int frame;
 
@@ -29,8 +29,9 @@ public class Model {
   public Model(double viewSize) {
 
     frameRate = 60;
-    gameTimer = new Timeline(new KeyFrame(Duration.millis(1000 / frameRate), e -> handleGameUpdates()));
-    gameTimer.setCycleCount(Animation.INDEFINITE);
+    animationTimer = new Timeline(new KeyFrame(Duration.millis(1000 / frameRate), e -> handleUpdates()));
+    animationTimer.setCycleCount(Animation.INDEFINITE);
+    animationTimer.play();
 
     this.viewSize = viewSize;
     appState = AppState.selectingMode;
@@ -39,6 +40,7 @@ public class Model {
 
   public void startGame(GameMode gameMode) {
     // start game and initialize fighter types based on selected game mode
+    // used as onClick method for select mode screen buttons
     appState = AppState.inGame;
     this.gameMode = gameMode;
 
@@ -56,36 +58,22 @@ public class Model {
         rightFighter = new ComputerFighter(FighterSide.right, viewSize, frameRate);
       }
     }
-    gameTimer.play(); // start update timer to animate game
   }
 
 
-  private void handleGameUpdates() {
+  private void handleUpdates() {
     frame ++;
 
-    faceFighers();
-    controlComputerFighters(); // only applies in PvC or CvC, but called regardless
-    leftFighter.detectHit(rightFighter, frame);
-    rightFighter.detectHit(leftFighter, frame);
-    leftFighter.sync(leftFighter.actionState, frame);
-    rightFighter.sync(rightFighter.actionState, frame);
-    checkReset();
-
-    updateSubscribers();
-  }
-
-
-  public void addSubscribers(PublishSubscribe... subscribers) {
-    if (this.subscribers == null) this.subscribers = Arrays.asList(subscribers);
-    else this.subscribers.addAll(Arrays.asList(subscribers));
-    updateSubscribers();
-  }
-
-
-  private void updateSubscribers() {
-    for (PublishSubscribe subscriber : subscribers) {
-      subscriber.update(appState, frame, viewSize, leftFighter, rightFighter, leftWins, rightWins);
+    if (appState == AppState.inGame) {
+      faceFighers();
+      controlComputerFighters(); // only applies in PvC or CvC, but called regardless
+      leftFighter.detectHit(rightFighter, frame);
+      rightFighter.detectHit(leftFighter, frame);
+      leftFighter.syncAction(leftFighter.actionState, frame);
+      rightFighter.syncAction(rightFighter.actionState, frame);
+      checkReset();
     }
+    updateSubscribers();
   }
 
 
@@ -111,8 +99,8 @@ public class Model {
       if (leftFighter.healthPoints <= 0) rightWins ++;
       else leftWins ++;
 
-      leftFighter.reset();
-      rightFighter.reset();
+      leftFighter.initialize(frame);
+      rightFighter.initialize(frame);
 
       // full reset when player wins match
       if (leftWins == 5 || rightWins == 5) {
@@ -125,6 +113,7 @@ public class Model {
 
 
   private void controlComputerFighters() {
+    // computer actions determined via Q-learning implemented directly in ComputerFighter
     if (gameMode == GameMode.PvC || gameMode == GameMode.CvC) {
       ((ComputerFighter) rightFighter).determineAction(leftFighter, frame);
       if (gameMode == GameMode.CvC) ((ComputerFighter) leftFighter).determineAction(rightFighter, frame);
@@ -133,6 +122,12 @@ public class Model {
   
 
   public void controlPlayerFighter(Object key, FighterSide side) {
+    // player fighter actions determined via inputs and handled by controller.controller
+    // move left - left player: A   right player: K
+    // move right - left player: S   right player: L
+    // attack - left player: Q   right player: I
+    // block - left player: W   right player: O
+
     PlayerFighter fighter;
 
     if (gameMode == GameMode.PvC && side == FighterSide.left) {
@@ -142,6 +137,20 @@ public class Model {
     else if (gameMode == GameMode.PvP) {
       fighter = (side == FighterSide.left) ? (PlayerFighter) leftFighter : (PlayerFighter) rightFighter;
       fighter.executeAction(fighter.keyActionMap.get(key), frame);
+    }
+
+  }
+  
+  public void addSubscribers(PublishSubscribe... subscribers) {
+    if (this.subscribers == null) this.subscribers = Arrays.asList(subscribers);
+    else this.subscribers.addAll(Arrays.asList(subscribers));
+    updateSubscribers();
+  }
+
+
+  private void updateSubscribers() {
+    for (PublishSubscribe subscriber : subscribers) {
+      subscriber.update(appState, frame, viewSize, leftFighter, rightFighter, leftWins, rightWins);
     }
   }
 }

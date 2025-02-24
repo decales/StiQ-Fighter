@@ -3,7 +3,7 @@ package com.example.a3_2;
 import com.example.a3_2.controller.Controller;
 import com.example.a3_2.model.Model;
 import com.example.a3_2.view.GameView;
-import com.example.a3_2.view.ModeSelectionView;
+import com.example.a3_2.view.MenuView;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -29,18 +29,18 @@ public class App extends Application {
 
         // ui components
         StackPane root = new StackPane();
-        ModeSelectionView modeSelectionView = new ModeSelectionView(controller);
+        MenuView menuView = new MenuView(controller);
         GameView gameView = new GameView();
         gameView.setPrefSize(displayWidth, displayHeight);
 
-        root.getChildren().addAll(modeSelectionView, gameView);
-        model.addSubscribers(modeSelectionView, gameView);
+        root.getChildren().addAll(menuView, gameView);
+        model.addSubscribers(menuView, gameView);
 
         Scene scene = new Scene(root, viewWidth, viewHeight);
         scene.setOnKeyPressed(controller::handleKeyPressed);
         scene.setOnKeyReleased(controller::handleKeyReleased);
 
-        stage.setTitle("");
+        stage.setTitle("Q-Duel");
         stage.setScene(scene);
         stage.setResizable(true);
         stage.show();

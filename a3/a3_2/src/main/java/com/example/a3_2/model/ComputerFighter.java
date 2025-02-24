@@ -8,9 +8,8 @@ public class ComputerFighter extends Fighter {
 
   public Map<GameState, Map<Action, Double>> qTable;
   private double alpha, gamma, epsilon;
-  private Action previousAction;
-  private GameState previousState;
-  private GameState currentState;
+  private Action action, previousAction;
+  private GameState state, previousState;
   private Random random;
   
   public ComputerFighter(FighterSide side, double viewSize, int frameRate) {
@@ -19,140 +18,134 @@ public class ComputerFighter extends Fighter {
 
     qTable = new HashMap<>();
     alpha = 0.2; // learning rate - conservative learning <-> aggressive learning
-    gamma = 0.25; // discount factor - short-term rewards <-> long-term rewards
-    epsilon = 0.015; // exploration rate - known action <-> random action (kept low because of high frame rate)
+    gamma = 0.95; // discount factor - short-term rewards <-> long-term rewards
+    epsilon = 0.2; // exploration rate - known action <-> random action
     random = new Random();
   }
 
-  
-  private void updateTable(int reward) {
-    // update qTable with the value of a recent action
 
-    double previousQ = qTable.getOrDefault(previousState, new HashMap<>()).getOrDefault(previousAction, 0.0); // Q(s, a)
-    double maxQ = qTable.getOrDefault(currentState, new HashMap<>()).values().stream().max(Double::compare).orElse(0.0); // max(Q(s', a'))
-    double newQ = (1 - alpha) * previousQ + alpha * (reward + gamma * maxQ);
-
-    if (!qTable.containsKey(previousState)) {
-      HashMap<Action, Double> actionValue = new HashMap<>();
-      actionValue.put(previousAction, newQ);
-      qTable.put(previousState, actionValue);
-    }
+  @Override
+  public void initialize(int frame) {
+    super.initialize(frame);
+    epsilon *= 0.095; // explore less and exploit more each round when initialize is called in model
   }
 
 
-  private void scoreAction() {
-    // determine value of recent action by comparing its effect on the state of the game in favour of computer
-    if (previousState != null) {
+  public void determineAction(Fighter opponent, int frame) {
+    if (!isAnimationLocked()) {
 
+      previousState = state; // save the state of the game prior to executing the computer's last action, s
+      state = new GameState(this, opponent); // observe state of game after computer's last action, s'
+      scoreAction(); // determine immediate reward of the last action that lead from state s to s' and update qTable
+
+      previousAction = action; // save the last action before getting the next one
+
+      // explore value of executing random action or choose next best action from qTable
+      if (random.nextDouble(1.0) < epsilon) action = Action.values()[random.nextInt(Action.values().length)];
+      else {
+        // check if current state has already been visited
+        if (qTable.containsKey(state)) { 
+          Map<Action, Double> actionValue = qTable.get(state);
+
+          // get the action with the highest immediate reward in the qTable
+          double maxValue = Integer.MIN_VALUE;
+          for (Object key : actionValue.keySet().toArray() ) {
+            if (key instanceof Action actionKey) {
+              if (actionValue.get(actionKey) > maxValue) {
+                action = actionKey;
+                maxValue = actionValue.get(actionKey);
+              }
+            }
+          }
+        } 
+        // otherwise first time in state, choose random action to explore
+        else action = Action.values()[random.nextInt(Action.values().length)];
+      }
+
+      // check if computer is continuing to execute one of the continuous actions (for animation purposes)
+      if (!((action == Action.moveLeft || action == Action.moveRight || action == Action.block) && action == previousAction))
+      { executeAction(action, frame); }
+    }
+  }
+  
+
+
+  private void scoreAction() {
+    if (previousState != null) {
       int reward = 0;
 
-      switch(previousAction) {
+      // score using policy based on the last action executed and its effect given state s resulting in s'
+      switch (action) {
 
         case moveLeft, moveRight -> {
-          if (currentState.opponentSide == FighterSide.left) {
-            if (previousAction == Action.moveLeft) reward += 10; // reward for moving towards opponent
-            else reward -= 10; // punishment for moving away
-          }
-          else { // opponent on right
-            if (previousAction == Action.moveRight) reward += 10; // reward for moving towards opponenet
-            else reward -= 10; // punishment for moving away
-          }
-
-          if (currentState.inAttackRange) { // reward being in attack attack range
-            if (!previousState.inAttackRange) { // further reward for moving into attack range
-              reward += 10;
-            } 
-            reward += 10;
-          }
-          else if (!currentState.inAttackRange && previousState.inAttackRange) { // moving out of attack range
-            if (currentState.opponentIsAttacking) { // reward for dodging attack
-              // reward += 10;
+          switch(previousState.opponentState) {
+            case parried -> reward -= 20; // should have attacked when opponent is parried - medium punishment
+            case preAttacking, attacking -> {
+              // attempted to dodge opponent attack - low/very low reward based on dodge success
+              if (!state.inAttackRange && previousState.inAttackRange) reward += (!isInvulnerable) ? 10 : 5;
+              // risked walking into opponent attack - low/medium punishment based on whether computer was hit
+              else if (!previousState.inAttackRange && state.inAttackRange) reward -= (isInvulnerable) ? 20 : 10; 
             }
-            else { // punishment for unecessarily leaving attack range
-              reward -= 20;
+            default -> {
+              if (!previousState.inAttackRange) {
+                // small reward/punishment depending on whether fighter approached opponent when not in attack range
+                reward += (state.opponentSide == (action == Action.moveLeft ? FighterSide.left : FighterSide.right)) ? 10 : -10;
+              }
             }
           }
         }
 
         case attack -> {
-          if (currentState.inAttackRange) { // reward for attempting to attack while in attack range
-            if (currentState.healthDifference > previousState.healthDifference) { // further reward if attack damages opponenet
-              if (currentState.opponentIsParried) { // even further reward for following up a parry with an attack
-                reward += 10;
-              }
-              reward += 10;
-            } 
-            reward += 10;
-
-            if (currentState.opponentIsBlocking) { // punishment if attack was blocked
-              reward -= 5;
+          // opponent was already in range or moved in range
+          if (previousState.inAttackRange || state.inAttackRange && !previousState.opponentIsInvulnerable) {
+            switch(previousState.opponentState) {
+              // attempted to attack when opponent vulnerable - low/medium reward depending on attack success
+              case idle, movingLeft, movingRight, postBlocking, postAttacking -> reward += (state.opponentIsInvulnerable) ? 10 : 20;
+              // attempted attack with risk of trading damage - neutral or low reward/punishment based on who took damage
+              case preAttacking, attacking -> {
+                reward +=
+                  (!previousState.isInvulnerable && state.isInvulnerable && state.opponentIsInvulnerable) ? 0 // traded hits
+                  : (!previousState.opponentIsInvulnerable && isInvulnerable) ? -10 // only computer was hit
+                  : (state.opponentIsInvulnerable) ? 10 // only opponenet was hit
+                  : 0; // neither fighter was hit
+              } 
+              case parried -> reward += 30; // capitalized post parry - high reward
+              default -> { /* no punishment if opponent was defending */ }
             }
-            if (currentState.opponentIsInvulnerable) { // punishment if opponent is invulnerable
-              reward -= 10;
-            }
-          }
-          else { // punishment for missing attack / unnecessarily attacking
-            reward -= 20;
-          }
+            if (actionState == ActionState.parried) reward -= 30; // opponent parried the attack - high punishment
+          } 
+          else reward -= 30; // opponent could not be hit - high punishment
         }
 
         case block -> {
-          if (currentState.inAttackRange) { // reward for attempting to block while in attack range
-            if (currentState.opponentIsAttacking) { // further reward for blocking opponent's attack
-              reward += 10;
+          // was range to block an attack
+          if (previousState.inAttackRange) {
+            switch(previousState.opponentState) {
+              case parried -> reward -= 20; // should have attacked when opponent was parried - medium punishment
+              // attempted to block opponent attack - high/medium/low reward based on effectiveness of block
+              case preAttacking, attacking -> {
+                reward += 
+                  (state.opponentState == ActionState.parried) ? 30 // prevented damage and parried opponenent
+                  : (state.isInvulnerable) ? 20 // only prevented damage
+                  : 10; // attempted block
+              }
+              default -> {}
             }
-            if (currentState.opponentIsInvulnerable) { // reward for playing defensively while opponent can't take damage
-              reward += 10;
-            }
-            reward += 10;
-          }
-          else { // punishment for unnecessarily blocking
-            reward -= 20;
-          }
+          } 
+          else reward -= 30; // unecessarily blocked - high punishment
         }
       }
-
-      // update qTable with the value of the recently performed action
-      updateTable(reward);
+      updateTable(reward); // update qTable using the immediate reward
     }
   }
-  
-
-  public void determineAction(Fighter opponent, int frame) {
-
-    if (!isAnimationLocked()) {
-
-      previousState = currentState; // keep track of previous state for reference in determining the value of an action
-      currentState = new GameState(this, opponent); // update state of game from computer's point of view
-      Action nextAction = null;
-
-      // explore value of executing random action or choose next best action from qTable
-      if (random.nextDouble(1.0) < epsilon) nextAction = Action.values()[random.nextInt(Action.values().length)];
-      else {
-        Map<Action, Double> actionValue = qTable.get(currentState);
-        // check if current state has already been visited
-        if (actionValue != null) { 
-
-          // get the action with the highest immediate reward in the qTable
-          double maxValue = Integer.MIN_VALUE;
-          for (Object key : actionValue.keySet().toArray() ) { 
-            if (key instanceof Action actionKey) {
-
-              if (actionValue.get(actionKey) > maxValue) {
-                nextAction = actionKey;
-                maxValue = actionValue.get(actionKey);
-              }
-            }
-          }
-        } // otherwise first time in state, choose random action
-        else nextAction = Action.values()[random.nextInt(Action.values().length)];
-      }
 
 
-      if (executeAction(nextAction, frame)) {
-        previousAction = nextAction; // action executed successfully, mark it as previous action
-        scoreAction();
-      }
-    }
+  private void updateTable(int reward) {
+    // Q(s, a) = (1 - alpha) * Q(s, a) + alpha * (reward + gamma * max(Q(s', a')))
+    double previousQ = qTable.getOrDefault(previousState, new HashMap<>()).getOrDefault(action, 0.0); // Q(s, a)
+    double maxQ = qTable.getOrDefault(state, new HashMap<>()).values().stream().max(Double::compare).orElse(0.0); // max(Q(s', a'))
+    double newQ = (1 - alpha) * previousQ + alpha * (reward + gamma * maxQ);
+
+    qTable.computeIfAbsent(previousState, k -> new HashMap<>()).put(action, newQ); // update table
   }
 }
