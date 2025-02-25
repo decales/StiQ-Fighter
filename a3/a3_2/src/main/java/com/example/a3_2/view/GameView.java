@@ -4,6 +4,8 @@ import com.example.a3_2.model.Fighter;
 import com.example.a3_2.model.PublishSubscribe;
 import com.example.a3_2.model.Fighter.FighterSide;
 import com.example.a3_2.model.Model.AppState;
+import com.example.a3_2.model.Model.GameMode;
+
 import javafx.geometry.Insets;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -36,7 +38,10 @@ public class GameView extends Pane implements PublishSubscribe {
     getChildren().addAll(leftFighterView, rightFighterView, topBar, floor);
   }
 
-  public void update(AppState appState, int frame, double viewSize, Fighter leftFighter, Fighter rightFighter, int leftWins, int rightWins) {
+  public void update(
+      AppState appState, int frame, double viewSize, 
+      GameMode gameMode, Fighter leftFighter, Fighter rightFighter, int leftWins, int rightWins) {
+
     if (appState == AppState.inGame) {
 
       setVisible(true);

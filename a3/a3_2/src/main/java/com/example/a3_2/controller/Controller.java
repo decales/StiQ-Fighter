@@ -23,13 +23,29 @@ public class Controller {
     rightKeyStack = new Stack<>();
   }
 
+  // mouse event handlers - menu control
 
-  public void handleMouseClicked(MouseEvent e) {
+  public void handleMouseEntered(MouseEvent e) {
     if (e.getSource() instanceof MenuButton menuButton) {
-      model.startGame(menuButton.gameMode);
+      model.setGameMode(menuButton.gameMode);
     }
   }
 
+
+  public void handleMouseExited(MouseEvent e) {
+    if (e.getSource() instanceof MenuButton) {
+      model.setGameMode(null);
+    }
+  }
+
+
+  public void handleMouseClicked(MouseEvent e) {
+    if (e.getSource() instanceof MenuButton) {
+      model.startGame();
+    }
+  }
+
+  // keyboard event handlers and helper functions - fighter control
 
   private boolean isLeftKey(String keyStr) {
     try { LeftPlayerKey.valueOf(keyStr); return true; }

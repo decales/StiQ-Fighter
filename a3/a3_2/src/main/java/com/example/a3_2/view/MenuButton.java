@@ -13,7 +13,7 @@ public class MenuButton extends VBox {
   public GameMode gameMode;
   private ImageView buttonSprite;
   private ImageView labelSprite;
-  private boolean animateButton;
+  private boolean buttonSelected;
   private double angle;
   
   public MenuButton(GameMode gameMode, Controller controller) {
@@ -22,8 +22,8 @@ public class MenuButton extends VBox {
 
     // button sprite
     buttonSprite = new ImageView(new Image(getClass().getResource(String.format( "/menu/%s/button.png", gameMode.toString().toLowerCase())).toString()));
-    buttonSprite.setOnMouseEntered(e -> animateButton = true);
-    buttonSprite.setOnMouseExited(e -> animateButton = false);
+    buttonSprite.setOnMouseEntered(e -> buttonSelected = true);
+    buttonSprite.setOnMouseExited(e -> buttonSelected = false);
     buttonSprite.setPreserveRatio(true);
     buttonSprite.setPickOnBounds(true);
 
@@ -33,8 +33,12 @@ public class MenuButton extends VBox {
 
     setAlignment(Pos.BASELINE_CENTER);
     getChildren().addAll(buttonSprite, labelSprite);
-    setOnMouseClicked(e -> { if (buttonSprite.contains(e.getX(), e.getY())) controller.handleMouseClicked(e); });
+
+    // event handlers
+    setOnMouseMoved( e -> { if (buttonSelected) controller.handleMouseEntered(e); else controller.handleMouseExited(e); });
+    setOnMouseClicked(e -> { if (buttonSelected) controller.handleMouseClicked(e); }); 
   }
+
 
   public void update(double viewSize) {
     buttonSprite.setFitWidth(viewSize * 0.2);
@@ -44,7 +48,7 @@ public class MenuButton extends VBox {
 
 
   private void rotateButton(double speed, double max) {
-    if (animateButton) angle += speed;
+    if (buttonSelected) angle += speed;
     else angle = 0;
     buttonSprite.setRotate(max * Math.sin(angle));
   }

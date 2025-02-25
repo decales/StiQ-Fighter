@@ -23,7 +23,7 @@ public class WinMarker extends ImageView {
   }
 
   public void update(double viewSize, int wins) {
-    setFitWidth(viewSize * 0.0425);
+    setFitWidth(viewSize * 0.08125);
     setImage(sprites[wins]);
 
   }

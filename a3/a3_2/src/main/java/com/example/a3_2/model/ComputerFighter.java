@@ -19,7 +19,7 @@ public class ComputerFighter extends Fighter {
     qTable = new HashMap<>();
     alpha = 0.2; // learning rate - conservative learning <-> aggressive learning
     gamma = 0.95; // discount factor - short-term rewards <-> long-term rewards
-    epsilon = 0.2; // exploration rate - known action <-> random action
+    epsilon = 0.25; // exploration rate - known action <-> random action
     random = new Random();
   }
 
@@ -27,7 +27,10 @@ public class ComputerFighter extends Fighter {
   @Override
   public void initialize(int frame) {
     super.initialize(frame);
-    epsilon *= 0.095; // explore less and exploit more each round when initialize is called in model
+    epsilon *= 0.09; // explore less and exploit more each round when initialize is called in model
+    // after 5 rounds, epsilon = ~15%
+    // after 10 rounds, epsilon = ~10%
+    // after 15 rounds, epsilon = ~5%
   }
 
 
@@ -68,7 +71,6 @@ public class ComputerFighter extends Fighter {
     }
   }
   
-
 
   private void scoreAction() {
     if (previousState != null) {

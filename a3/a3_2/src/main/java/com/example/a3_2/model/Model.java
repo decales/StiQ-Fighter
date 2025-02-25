@@ -11,7 +11,7 @@ import javafx.util.Duration;
 
 public class Model {
 
-  public enum AppState { selectingMode, inGame }
+  public enum AppState { inMenu, inGame }
   public enum GameMode { PvP, PvC, CvC }
 
   private List<PublishSubscribe> subscribers;
@@ -34,15 +34,19 @@ public class Model {
     animationTimer.play();
 
     this.viewSize = viewSize;
-    appState = AppState.selectingMode;
+    appState = AppState.inMenu;
   }
 
 
-  public void startGame(GameMode gameMode) {
+  public void setGameMode(GameMode gameMode) {
+    if (appState == AppState.inMenu) this.gameMode = gameMode;
+  }
+
+
+  public void startGame() {
     // start game and initialize fighter types based on selected game mode
     // used as onClick method for select mode screen buttons
     appState = AppState.inGame;
-    this.gameMode = gameMode;
 
     switch(gameMode) {
       case PvP -> { // player vs player
@@ -106,7 +110,7 @@ public class Model {
       if (leftWins == 5 || rightWins == 5) {
         if (leftWins == 5) {}
         else {}
-        appState = AppState.selectingMode;
+        appState = AppState.inMenu;
       }
     }
   }
@@ -150,7 +154,7 @@ public class Model {
 
   private void updateSubscribers() {
     for (PublishSubscribe subscriber : subscribers) {
-      subscriber.update(appState, frame, viewSize, leftFighter, rightFighter, leftWins, rightWins);
+      subscriber.update(appState, frame, viewSize, gameMode, leftFighter, rightFighter, leftWins, rightWins);
     }
   }
 }
