@@ -55,7 +55,7 @@ public class FighterView extends ImageView {
     setTranslateX((fighter.side == FighterSide.left) ? 0 : -getFitWidth() + (getFitWidth() * fighterRatio));
 
     // sprite blinks in and out after fighter is damaged
-    if (fighter.isInvulnerable) blinkTimer.play();
+    if (fighter.isInvincible) blinkTimer.play();
     else { blinkTimer.stop(); setVisible(true); }
   }
 }

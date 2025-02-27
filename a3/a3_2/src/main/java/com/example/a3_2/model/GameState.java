@@ -6,15 +6,30 @@ import com.example.a3_2.model.Fighter.FighterSide;
 
 public class GameState {
 
-  boolean isInvulnerable, opponentIsInvulnerable;
-  ActionState opponentState;
-  FighterSide opponentSide;
-  boolean inAttackRange;
+  public boolean isInvincible;
+  public boolean opponentIsInvincible;
+  // ActionState opponentState;
+  public boolean opponentIsAttacking;
+  public boolean opponentIsVulnerable;
+  public FighterSide opponentSide;
+  public boolean inAttackRange;
+
+
 
   public GameState(Fighter self, Fighter opponent) {
 
-    opponentIsInvulnerable = opponent.isInvulnerable;
-    opponentState = opponent.actionState;
+    isInvincible = self.isInvincible;
+    opponentIsInvincible = opponent.isInvincible;
+
+    opponentIsAttacking =
+      opponent.actionState == ActionState.preAttacking ||
+      opponent.actionState == ActionState.attacking;
+    
+    opponentIsVulnerable = !(
+        opponent.actionState == ActionState.preBlocking ||
+        opponent.actionState==ActionState.blocking || 
+        opponent.actionState==ActionState.deflecting);
+
     opponentSide = opponent.side;
 
     inAttackRange = (self.side == FighterSide.left) 
@@ -31,9 +46,10 @@ public class GameState {
 
   public int hashCode() {
     return Objects.hash(
-        opponentIsInvulnerable, opponentIsInvulnerable,
-        opponentState, opponentSide,
-        inAttackRange
+        // isInvincible, opponentIsInvincible,
+        // opponentState, opponentSide,
+        // inAttackRange
+        isInvincible, opponentIsInvincible, opponentIsAttacking, opponentIsVulnerable, opponentSide, inAttackRange
     );
   }
 }

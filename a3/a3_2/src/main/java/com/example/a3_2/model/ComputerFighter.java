@@ -18,7 +18,7 @@ public class ComputerFighter extends Fighter {
 
     qTable = new HashMap<>();
     alpha = 0.2; // learning rate - conservative learning <-> aggressive learning
-    gamma = 0.667; // discount factor - short-term rewards <-> long-term rewards
+    gamma = 0.8; // discount factor - short-term rewards <-> long-term rewards
     epsilon = 0.4; // exploration rate - known action <-> random action
     random = new Random();
   }
@@ -27,12 +27,12 @@ public class ComputerFighter extends Fighter {
   @Override
   public void initialize(int frame) {
     super.initialize(frame);
-    epsilon *= 0.9;// explore less and exploit more each round when initialize is called in model
+    epsilon *= 0.85;// explore less and exploit more each round when initialize is called in model
                    // initial -> 40%
-                   // 5 rounds -> ~25%
-                   // 10 rounds -> ~15%
-                   // 15 rounds -> ~10%
-                   // 20 rounds -> ~5%
+                   // 5 rounds -> ~20%
+                   // 10 rounds -> ~10%
+                   // 15 rounds -> ~5%
+                   // 20 rounds -> ~2%
   }
 
 
@@ -73,48 +73,108 @@ public class ComputerFighter extends Fighter {
   }
   
 
+  // private void scoreAction() {
+  //   if (previousState != null) {
+  //     int reward = 0;
+  //     // score using policy based on the last action executed in state s resulting in s'
+  //     switch (action) {
+  //
+  //       case moveLeft, moveRight -> {
+  //         switch(previousState.opponentState) {
+  //           case parried -> reward -= 20; // should have attacked when opponent is parried - medium punishment
+  //           case preAttacking, attacking -> {
+  //             // attempted to dodge opponent attack - low/very low reward based on dodge success
+  //             if (!state.inAttackRange && previousState.inAttackRange) reward += (!isInvincible) ? 10 : 5;
+  //             // risked walking into opponent attack - low/medium punishment based on whether computer was hit
+  //             else if (!previousState.inAttackRange && state.inAttackRange) reward -= (isInvincible) ? 20 : 10; 
+  //           }
+  //           default -> {
+  //             if (!previousState.inAttackRange) {
+  //               // small reward/punishment depending on whether fighter approached opponent when not in attack range
+  //               reward += (state.opponentSide == (action == Action.moveLeft ? FighterSide.left : FighterSide.right)) ? 10 : -10;
+  //             }
+  //           }
+  //         }
+  //       }
+  //
+  //       case attack -> {
+  //         // opponent was already in range or moved in range
+  //         if (previousState.inAttackRange || state.inAttackRange && !previousState.opponentIsInvincible) {
+  //           switch(previousState.opponentState) {
+  //             // attempted to attack when opponent vulnerable - low/medium reward depending on attack success
+  //             case idle, movingLeft, movingRight, postBlocking, postAttacking -> reward += (state.opponentIsInvincible) ? 10 : 20;
+  //             // attempted attack with risk of trading damage - neutral or low reward/punishment based on who took damage
+  //             case preAttacking, attacking -> {
+  //               reward +=
+  //                 (!previousState.isInvincible && state.isInvincible && state.opponentIsInvincible) ? 0 // traded hits
+  //                 : (!previousState.opponentIsInvincible && isInvincible) ? -10 // only computer was hit
+  //                 : (state.opponentIsInvincible) ? 10 // only opponenet was hit
+  //                 : 0; // neither fighter was hit
+  //             } 
+  //             case parried -> reward += 30; // capitalized post parry - high reward
+  //             default -> { /* no punishment if opponent was defending */ }
+  //           }
+  //           if (actionState == ActionState.parried) reward -= 30; // opponent parried the attack - high punishment
+  //         } 
+  //         else reward -= 30; // opponent could not be hit - high punishment
+  //       }
+  //
+  //       case block -> {
+  //         // was/is range to block an attack
+  //         if (previousState.inAttackRange || state.inAttackRange) {
+  //           switch(previousState.opponentState) {
+  //             case parried -> reward -= 20; // should have attacked when opponent was parried - medium punishment
+  //             // attempted to block opponent attack - high/medium/low reward based on effectiveness of block
+  //             case preAttacking, attacking -> {
+  //               reward += 
+  //                 (state.opponentState == ActionState.parried) ? 30 // prevented damage and parried opponenent
+  //                 : (state.isInvincible) ? 20 // only prevented damage
+  //                 : 10; // attempted block
+  //             }
+  //             default -> {}
+  //           }
+  //         } 
+  //         else reward -= 30; // unecessarily blocked - high punishment
+  //       }
+  //     }
+  //     updateTable(reward); // update qTable using the immediate reward
+  //   }
+  // }
   private void scoreAction() {
     if (previousState != null) {
-      int reward = 0;
-      // score using policy based on the last action executed in state s resulting in s'
+
+      int reward = 0; // score using policy based on the last action executed in state s resulting in s'
+      
       switch (action) {
 
         case moveLeft, moveRight -> {
-          switch(previousState.opponentState) {
-            case parried -> reward -= 20; // should have attacked when opponent is parried - medium punishment
-            case preAttacking, attacking -> {
-              // attempted to dodge opponent attack - low/very low reward based on dodge success
-              if (!state.inAttackRange && previousState.inAttackRange) reward += (!isInvulnerable) ? 10 : 5;
-              // risked walking into opponent attack - low/medium punishment based on whether computer was hit
-              else if (!previousState.inAttackRange && state.inAttackRange) reward -= (isInvulnerable) ? 20 : 10; 
-            }
-            default -> {
-              if (!previousState.inAttackRange) {
-                // small reward/punishment depending on whether fighter approached opponent when not in attack range
-                reward += (state.opponentSide == (action == Action.moveLeft ? FighterSide.left : FighterSide.right)) ? 10 : -10;
-              }
-            }
+          if (previousState.opponentIsAttacking) {
+            // attempted to dodge opponent attack - low/very low reward based on dodge success
+            if (!state.inAttackRange && previousState.inAttackRange) reward += (!isInvincible) ? 10 : 5;
+            // risked walking into opponent attack - low/medium punishment based on whether computer was hit
+            else if (!previousState.inAttackRange && state.inAttackRange) reward -= (isInvincible) ? 20 : 10; 
+          }
+          if (!previousState.inAttackRange) {
+            // small reward/punishment depending on whether fighter approached opponent when not in attack range
+            reward += (state.opponentSide == (action == Action.moveLeft ? FighterSide.left : FighterSide.right)) ? 10 : -10;
           }
         }
 
         case attack -> {
           // opponent was already in range or moved in range
-          if (previousState.inAttackRange || state.inAttackRange && !previousState.opponentIsInvulnerable) {
-            switch(previousState.opponentState) {
-              // attempted to attack when opponent vulnerable - low/medium reward depending on attack success
-              case idle, movingLeft, movingRight, postBlocking, postAttacking -> reward += (state.opponentIsInvulnerable) ? 10 : 20;
-              // attempted attack with risk of trading damage - neutral or low reward/punishment based on who took damage
-              case preAttacking, attacking -> {
-                reward +=
-                  (!previousState.isInvulnerable && state.isInvulnerable && state.opponentIsInvulnerable) ? 0 // traded hits
-                  : (!previousState.opponentIsInvulnerable && isInvulnerable) ? -10 // only computer was hit
-                  : (state.opponentIsInvulnerable) ? 10 // only opponenet was hit
-                  : 0; // neither fighter was hit
-              } 
-              case parried -> reward += 30; // capitalized post parry - high reward
-              default -> { /* no punishment if opponent was defending */ }
+          if (previousState.inAttackRange || state.inAttackRange && !previousState.opponentIsInvincible) {
+            // attempted attack with risk of trading damage - neutral or low reward/punishment based on who took damage
+            if (previousState.opponentIsAttacking) {
+              reward +=
+                (!previousState.isInvincible && state.isInvincible && state.opponentIsInvincible) ? 0 // traded hits
+                : (!previousState.opponentIsInvincible && isInvincible) ? -10 // only computer was hit
+                : (state.opponentIsInvincible) ? 10 // only opponenet was hit
+                : 0; // neither fighter was hit
             }
-            if (actionState == ActionState.parried) reward -= 30; // opponent parried the attack - high punishment
+            // attempted to attack when opponent vulnerable - low/medium reward depending on attack success
+            else if (previousState.opponentIsVulnerable) reward += (state.opponentIsInvincible) ? 5 : 10;
+            // opponent parried the attack - high punishment
+            if (actionState == ActionState.parried) reward -= 30; 
           } 
           else reward -= 30; // opponent could not be hit - high punishment
         }
@@ -122,17 +182,8 @@ public class ComputerFighter extends Fighter {
         case block -> {
           // was/is range to block an attack
           if (previousState.inAttackRange || state.inAttackRange) {
-            switch(previousState.opponentState) {
-              case parried -> reward -= 20; // should have attacked when opponent was parried - medium punishment
-              // attempted to block opponent attack - high/medium/low reward based on effectiveness of block
-              case preAttacking, attacking -> {
-                reward += 
-                  (state.opponentState == ActionState.parried) ? 30 // prevented damage and parried opponenent
-                  : (state.isInvulnerable) ? 20 // only prevented damage
-                  : 10; // attempted block
-              }
-              default -> {}
-            }
+            // attempted to block opponent attack - high/medium/low reward based on whether the block was successful or not
+            if (previousState.opponentIsAttacking) reward +=  (state.isInvincible) ? 20 : 10;
           } 
           else reward -= 30; // unecessarily blocked - high punishment
         }

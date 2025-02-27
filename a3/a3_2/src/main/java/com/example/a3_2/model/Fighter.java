@@ -9,7 +9,7 @@ public abstract class Fighter {
   };
   
   public int actionFrame, executeFrame;
-  public int invulnerableFrame;
+  public int invincibleFrame;
   public int parryFrame;
 
   public ActionState actionState;
@@ -17,8 +17,8 @@ public abstract class Fighter {
 
   private int initHealthPoints;
   public int healthPoints;
-  public boolean isInvulnerable;
-  private int invulnerabilityDuration;
+  public boolean isInvincible;
+  private int invincibilityDuration;
   private boolean canParry;
   private int parryDuration;
 
@@ -35,7 +35,7 @@ public abstract class Fighter {
 
     // Stat-based attributes
     initHealthPoints = 7;
-    invulnerabilityDuration = 75; // in frames
+    invincibilityDuration = 75; // in frames
     parryDuration = 5; // in frames
 
     // Position-based attributes
@@ -55,7 +55,7 @@ public abstract class Fighter {
   public void initialize(int frame) {
     actionState = ActionState.idle;
     actionFrame = frame;
-    invulnerableFrame = -invulnerabilityDuration;
+    invincibleFrame = -invincibilityDuration;
     parryFrame = -parryDuration;
     healthPoints = initHealthPoints;
     updatePosition(initX, initY);
@@ -75,8 +75,8 @@ public abstract class Fighter {
     actionFrame = frame - executeFrame; // execFrame is the frame an action begins execution from executeAction(), passed from model
     this.actionState = actionState;
 
-    // invulnerable and parry frames are set on the frame an opponent attack hits the fighter from detectHit() 
-    isInvulnerable = (frame - invulnerableFrame < invulnerabilityDuration);
+    // Invincible and parry frames are set on the frame an opponent attack hits the fighter from detectHit() 
+    isInvincible = (frame - invincibleFrame < invincibilityDuration);
     canParry = (frame - parryFrame < parryDuration);
 
     // in lack of a better way to do this, I have hard coded the animation durations directly into the cases below
@@ -187,14 +187,14 @@ public abstract class Fighter {
           actionState = ActionState.deflecting;
           executeFrame = frame;
         }  
-        // fighter takes damage in non blocking-deflecting-invulnernable states
-        else if (actionState != ActionState.deflecting && !isInvulnerable) { 
+        // fighter takes damage in non blocking-deflecting-invicible states
+        else if (actionState != ActionState.deflecting && !isInvincible) { 
           // take extra damage when fighter is hit while in parried status
           if (actionState == ActionState.parried) { actionState = ActionState.idle; healthPoints -= 3; }
           else healthPoints -= 1;
 
-          // fighter is temporarily invulnerable after taking damage
-          invulnerableFrame = frame;
+          // fighter is temporarily invincible after taking damage
+          invincibleFrame = frame;
         }
       }
     }
