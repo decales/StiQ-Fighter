@@ -1,4 +1,4 @@
-package com.example.a3_2.view;
+package com.example.a3_2.view.game;
 
 import java.io.File;
 import java.util.HashMap;
@@ -27,15 +27,15 @@ public class FighterView extends ImageView {
 
     // Initialize a map of all sprite frames for each action
     for (ActionState action : ActionState.values()) {
-      File[] spriteFiles = new File(getClass().getResource( String.format("/fighter/%s", action)).getPath()).listFiles();
+      File[] spriteFiles = new File(getClass().getResource(String.format("/game/fighter/%s", action)).getPath()).listFiles();
       Image[] sprites = new Image[spriteFiles.length];
       for (int i = 0; i < sprites.length; i++) sprites[i] = new Image(spriteFiles[i].toURI().toString());
       spriteMap.put(action, sprites);
     }
   }
 
-  public void update(Fighter fighter, int frame) {
 
+  public void update(Fighter fighter, int frame) {
     // on each frame, update the sprite with the frame of the fighter's current action
     ActionState actionState;
     if (fighter.side == FighterSide.right) {

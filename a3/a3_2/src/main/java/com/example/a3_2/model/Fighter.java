@@ -34,7 +34,7 @@ public abstract class Fighter {
   public Fighter(FighterSide side, double viewSize, int frameRate) {
 
     // Stat-based attributes
-    initHealthPoints = 8;
+    initHealthPoints = 7;
     invulnerabilityDuration = 75; // in frames
     parryDuration = 5; // in frames
 

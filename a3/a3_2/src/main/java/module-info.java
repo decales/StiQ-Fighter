@@ -7,6 +7,8 @@ module com.example.a3_2 {
     exports com.example.a3_2;
     exports com.example.a3_2.model;
     opens com.example.a3_2.model to javafx.fxml;
-    exports com.example.a3_2.view;
-    opens com.example.a3_2.view to javafx.fxml;
+    exports com.example.a3_2.view.game;
+    opens com.example.a3_2.view.game to javafx.fxml;
+    exports com.example.a3_2.view.menu;
+    opens com.example.a3_2.view.menu to javafx.fxml;
 }

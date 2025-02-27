@@ -2,7 +2,6 @@ package com.example.a3_2.model;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import com.example.a3_2.controller.Controller.LeftPlayerKey;
 import com.example.a3_2.controller.Controller.RightPlayerKey;
 

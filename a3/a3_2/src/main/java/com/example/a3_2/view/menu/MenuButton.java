@@ -1,8 +1,7 @@
-package com.example.a3_2.view;
+package com.example.a3_2.view.menu;
 
 import com.example.a3_2.controller.Controller;
 import com.example.a3_2.model.Model.GameMode;
-
 import javafx.geometry.Pos;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;

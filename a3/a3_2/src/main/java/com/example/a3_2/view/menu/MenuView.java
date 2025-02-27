@@ -1,13 +1,10 @@
-package com.example.a3_2.view;
-
-import java.util.List;
+package com.example.a3_2.view.menu;
 
 import com.example.a3_2.controller.Controller;
 import com.example.a3_2.model.Fighter;
 import com.example.a3_2.model.PublishSubscribe;
 import com.example.a3_2.model.Model.AppState;
 import com.example.a3_2.model.Model.GameMode;
-
 import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -36,6 +33,7 @@ public class MenuView extends StackPane implements PublishSubscribe  {
     vBox.getChildren().addAll(menuSelection, buttonBox);
     getChildren().addAll(vBox);
   }
+
 
   public void update(
       AppState appState, int frame, double viewSize,

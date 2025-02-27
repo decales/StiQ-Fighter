@@ -1,5 +1,6 @@
-package com.example.a3_2.view;
+package com.example.a3_2.view.game;
 
+import com.example.a3_2.controller.Controller;
 import com.example.a3_2.model.Fighter;
 import com.example.a3_2.model.PublishSubscribe;
 import com.example.a3_2.model.Fighter.FighterSide;
@@ -7,36 +8,39 @@ import com.example.a3_2.model.Model.AppState;
 import com.example.a3_2.model.Model.GameMode;
 
 import javafx.geometry.Insets;
-import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Line;
 
-public class GameView extends Pane implements PublishSubscribe {
+public class GameView extends StackPane implements PublishSubscribe {
 
   private FighterView leftFighterView;
   private FighterView rightFighterView;
-
-  private HBox topBar;
   private FighterBar leftBar;
   private FighterBar rightBar;
-
   private Line floor;
+  private QuitButton quitButton;
 
-  public GameView() {
+  public GameView(Controller controller) {
     // fighter sprites
+    Pane fighterPane = new Pane();
     leftFighterView = new FighterView();
     rightFighterView = new FighterView();
 
     // fighter bars
-    topBar = new HBox();
     leftBar = new FighterBar(FighterSide.left);
     rightBar = new FighterBar(FighterSide.right);
-    topBar.getChildren().addAll(leftBar, rightBar);
 
-    floor = new Line();
+    floor = new Line(); // very lazy 'floor' in background
+    fighterPane.getChildren().addAll(leftFighterView, rightFighterView, floor);
 
-    getChildren().addAll(leftFighterView, rightFighterView, topBar, floor);
+    quitButton = new QuitButton(controller);
+    setAlignment(quitButton, Pos.BOTTOM_LEFT);
+
+    getChildren().addAll(leftBar, rightBar, fighterPane, quitButton);
   }
+
 
   public void update(
       AppState appState, int frame, double viewSize, 
@@ -53,14 +57,14 @@ public class GameView extends Pane implements PublishSubscribe {
       floor.setStartX(0);
       floor.setEndX(viewSize);
 
-      topBar.setMinWidth(viewSize);
-      topBar.setPadding(new Insets(viewSize * 0.0075));
-
       leftFighterView.update(leftFighter, frame);
       rightFighterView.update(rightFighter, frame);
 
       leftBar.update(viewSize, frame, leftFighter.healthPoints, leftWins);
       rightBar.update(viewSize, frame, rightFighter.healthPoints, rightWins);
+
+      quitButton.update(viewSize);
+      setMargin(quitButton, new Insets(viewSize * 0.01));
     }
     else setVisible(false);
   }

@@ -18,8 +18,8 @@ public class ComputerFighter extends Fighter {
 
     qTable = new HashMap<>();
     alpha = 0.2; // learning rate - conservative learning <-> aggressive learning
-    gamma = 0.95; // discount factor - short-term rewards <-> long-term rewards
-    epsilon = 0.25; // exploration rate - known action <-> random action
+    gamma = 0.667; // discount factor - short-term rewards <-> long-term rewards
+    epsilon = 0.4; // exploration rate - known action <-> random action
     random = new Random();
   }
 
@@ -27,10 +27,12 @@ public class ComputerFighter extends Fighter {
   @Override
   public void initialize(int frame) {
     super.initialize(frame);
-    epsilon *= 0.09; // explore less and exploit more each round when initialize is called in model
-    // after 5 rounds, epsilon = ~15%
-    // after 10 rounds, epsilon = ~10%
-    // after 15 rounds, epsilon = ~5%
+    epsilon *= 0.9;// explore less and exploit more each round when initialize is called in model
+                   // initial -> 40%
+                   // 5 rounds -> ~25%
+                   // 10 rounds -> ~15%
+                   // 15 rounds -> ~10%
+                   // 20 rounds -> ~5%
   }
 
 
@@ -64,7 +66,6 @@ public class ComputerFighter extends Fighter {
         // otherwise first time in state, choose random action to explore
         else action = Action.values()[random.nextInt(Action.values().length)];
       }
-
       // check if computer is continuing to execute one of the continuous actions (for animation purposes)
       if (!((action == Action.moveLeft || action == Action.moveRight || action == Action.block) && action == previousAction))
       { executeAction(action, frame); }
@@ -75,8 +76,7 @@ public class ComputerFighter extends Fighter {
   private void scoreAction() {
     if (previousState != null) {
       int reward = 0;
-
-      // score using policy based on the last action executed and its effect given state s resulting in s'
+      // score using policy based on the last action executed in state s resulting in s'
       switch (action) {
 
         case moveLeft, moveRight -> {
@@ -120,8 +120,8 @@ public class ComputerFighter extends Fighter {
         }
 
         case block -> {
-          // was range to block an attack
-          if (previousState.inAttackRange) {
+          // was/is range to block an attack
+          if (previousState.inAttackRange || state.inAttackRange) {
             switch(previousState.opponentState) {
               case parried -> reward -= 20; // should have attacked when opponent was parried - medium punishment
               // attempted to block opponent attack - high/medium/low reward based on effectiveness of block

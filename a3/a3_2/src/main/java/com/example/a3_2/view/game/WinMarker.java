@@ -1,9 +1,7 @@
-package com.example.a3_2.view;
+package com.example.a3_2.view.game;
 
 import java.io.File;
-
 import com.example.a3_2.model.Fighter.FighterSide;
-
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -12,8 +10,7 @@ public class WinMarker extends ImageView {
   private Image[] sprites;
 
   public WinMarker(FighterSide side) {
-
-    File[] spriteFiles = new File(getClass().getResource("/wins/").getPath()).listFiles();
+    File[] spriteFiles = new File(getClass().getResource("/game/wins/").getPath()).listFiles();
     sprites = new Image[spriteFiles.length];
     for (int i = 0; i < sprites.length; i++) sprites[i] = new Image(spriteFiles[i].toURI().toString());
 
@@ -22,9 +19,10 @@ public class WinMarker extends ImageView {
     setPreserveRatio(true);
   }
 
+
   public void update(double viewSize, int wins) {
     setFitWidth(viewSize * 0.08125);
-    setImage(sprites[wins]);
-
+    if (wins >= sprites.length) setImage(sprites[sprites.length - 1]);
+    else setImage(sprites[wins]);
   }
 }

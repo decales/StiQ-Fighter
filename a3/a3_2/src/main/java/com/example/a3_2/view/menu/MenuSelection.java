@@ -1,9 +1,7 @@
-package com.example.a3_2.view;
+package com.example.a3_2.view.menu;
 
 import java.util.HashMap;
-
 import com.example.a3_2.model.Model.GameMode;
-
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -12,7 +10,6 @@ public class MenuSelection extends ImageView {
   private HashMap<GameMode, Image> spriteMap;
 
   public MenuSelection() {
-
     spriteMap = new HashMap<>();
     for (GameMode mode : GameMode.values()) {
       spriteMap.put(mode, new Image(getClass().getResource(String.format("/menu/%s/selection.png", mode.toString().toLowerCase())).toString()));

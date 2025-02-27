@@ -3,7 +3,8 @@ package com.example.a3_2.controller;
 import java.util.Stack;
 import com.example.a3_2.model.Model;
 import com.example.a3_2.model.Fighter.FighterSide;
-import com.example.a3_2.view.MenuButton;
+import com.example.a3_2.view.game.QuitButton;
+import com.example.a3_2.view.menu.MenuButton;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
@@ -26,22 +27,26 @@ public class Controller {
   // mouse event handlers - menu control
 
   public void handleMouseEntered(MouseEvent e) {
-    if (e.getSource() instanceof MenuButton menuButton) {
-      model.setGameMode(menuButton.gameMode);
+    switch (e.getSource()) {
+      case MenuButton menuButton -> model.setGameMode(menuButton.gameMode);
+      default -> {}
     }
   }
 
 
   public void handleMouseExited(MouseEvent e) {
-    if (e.getSource() instanceof MenuButton) {
-      model.setGameMode(null);
+    switch (e.getSource()) {
+      case MenuButton menuButton -> model.setGameMode(null);
+      default -> {}
     }
   }
 
 
   public void handleMouseClicked(MouseEvent e) {
-    if (e.getSource() instanceof MenuButton) {
-      model.startGame();
+    switch (e.getSource()) {
+      case MenuButton menuButton -> model.startGame();
+      case QuitButton quitButton -> model.initialize();
+      default -> {}
     }
   }
 

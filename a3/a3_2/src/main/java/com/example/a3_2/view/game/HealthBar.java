@@ -1,10 +1,7 @@
-package com.example.a3_2.view;
+package com.example.a3_2.view.game;
 
 import java.io.File;
-
 import com.example.a3_2.model.Fighter.FighterSide;
-
-import javafx.geometry.Pos;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -17,22 +14,18 @@ public class HealthBar extends HBox {
   private Image[] sprites;
 
   public HealthBar(FighterSide side) {
-
     this.side = side;
     frameRepetition = 5; 
     animationInterval = 120; // health sprites animate every x frames
 
     // initialize sprite array
-    File[] spriteFiles = new File(getClass().getResource(String.format("/health/")).getPath()).listFiles();
+    File[] spriteFiles = new File(getClass().getResource(String.format("/game/health/")).getPath()).listFiles();
     sprites = new Image[spriteFiles.length];
     for (int i = 0; i < sprites.length; i++) sprites[i] = new Image(spriteFiles[i].toURI().toString());
-
-    setAlignment(Pos.CENTER);
   }  
 
 
   public void update(double viewSize, int healthPoints, int frame) {
-
     setSpacing(viewSize * 0.006);
     
     // initialize health sprites
@@ -44,7 +37,6 @@ public class HealthBar extends HBox {
         getChildren().add(sprite);
       }
     }
-
     // animation speeds up as health decreases, just cause
     int hpLost = getChildren().size() - healthPoints;
     int animationInterval = (int) (this.animationInterval - (this.animationInterval * ((double) hpLost / (double) getChildren().size())));
