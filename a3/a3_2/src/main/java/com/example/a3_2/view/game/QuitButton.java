@@ -21,7 +21,7 @@ public class QuitButton extends ImageView {
 
 
   public void update(double viewSize) {
-    setFitWidth(viewSize * 0.06333);
+    setFitWidth(viewSize * 0.06);
     rotateButton(0.1, 5);
   }
 

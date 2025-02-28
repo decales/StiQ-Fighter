@@ -6,7 +6,6 @@ import com.example.a3_2.model.PublishSubscribe;
 import com.example.a3_2.model.Fighter.FighterSide;
 import com.example.a3_2.model.Model.AppState;
 import com.example.a3_2.model.Model.GameMode;
-
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.layout.Pane;
@@ -23,6 +22,7 @@ public class GameView extends StackPane implements PublishSubscribe {
   private QuitButton quitButton;
 
   public GameView(Controller controller) {
+
     // fighter sprites
     Pane fighterPane = new Pane();
     leftFighterView = new FighterView();

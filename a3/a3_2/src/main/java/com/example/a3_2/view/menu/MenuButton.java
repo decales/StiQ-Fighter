@@ -36,6 +36,7 @@ public class MenuButton extends VBox {
     // event handlers
     setOnMouseMoved( e -> { if (buttonSelected) controller.handleMouseEntered(e); else controller.handleMouseExited(e); });
     setOnMouseClicked(e -> { if (buttonSelected) controller.handleMouseClicked(e); }); 
+    setOnMouseExited(controller::handleMouseExited);
   }
 
 

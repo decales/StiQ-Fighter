@@ -49,8 +49,12 @@ public class FighterView extends ImageView {
     // scale and translate frame depending on which relative side the fighter is on
     setFitHeight(fighter.height);
     setFitWidth(getFitHeight() * getImage().getWidth() / getImage().getHeight());
-    setX(fighter.posX);
-    setY(fighter.posY);
+    
+    if (!fighter.isAnimationLocked()) {
+      setX(fighter.posX);
+      setY(fighter.posY);
+    }
+    
     setScaleX((fighter.side == FighterSide.left) ? 1 : -1);
     setTranslateX((fighter.side == FighterSide.left) ? 0 : -getFitWidth() + (getFitWidth() * fighterRatio));
 

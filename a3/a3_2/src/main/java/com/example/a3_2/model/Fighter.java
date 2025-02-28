@@ -27,7 +27,8 @@ public abstract class Fighter {
   private double deltaX;
   private double initX, initY;
   public double posX, posY;
-
+  private double attackingPosX, parriedPosX;
+  private double attackingHitBoxReach;
   private double attackX, attackY;
   public double attackReach;
   
@@ -46,6 +47,7 @@ public abstract class Fighter {
     initX = (side == FighterSide.left) ? viewSize * 0.2 - width : viewSize * 0.8;
     initY = viewSize * 0.4667 - height;
     deltaX = (viewSize * 0.0025);
+    attackingHitBoxReach = width * 0.667;
     attackReach = (width * 2.55);
     
     initialize(0);
@@ -53,16 +55,16 @@ public abstract class Fighter {
 
 
   public void initialize(int frame) {
-    actionState = ActionState.idle;
     actionFrame = frame;
+    updatePosition(initX, initY);
     invincibleFrame = -invincibilityDuration;
     parryFrame = -parryDuration;
     healthPoints = initHealthPoints;
-    updatePosition(initX, initY);
+    actionState = ActionState.idle;
   }
 
 
-  protected boolean isAnimationLocked() {
+  public boolean isAnimationLocked() {
     // various action states lock the fighter in an animation - these are the ones that don't
     return !(actionState == ActionState.idle || actionState == ActionState.movingLeft
           || actionState == ActionState.movingRight || actionState == ActionState.blocking);
@@ -92,6 +94,7 @@ public abstract class Fighter {
       // pre-attack - wind-up animation
       case preAttacking -> {
         if (actionFrame == 20) {
+          attackingPosX = posX;
           executeFrame = frame;
           syncAction(ActionState.attacking, frame);
         }
@@ -103,7 +106,10 @@ public abstract class Fighter {
           resetAttackHitbox();
           syncAction(ActionState.postAttacking, frame);
         }
-        else attackX += ((side == FighterSide.left) ? attackReach : -attackReach) / 11; // move attack hitbox each frame
+        else {
+          attackX += ((side == FighterSide.left) ? attackReach : -attackReach) / 11; // move attack hitbox each frame
+          posX += ((side == FighterSide.left) ? attackingHitBoxReach : -attackingHitBoxReach) / 11; // body hitbox moves forward with attack 
+        }
       }
       // post-attack - wind-down animation 
       case postAttacking -> {
@@ -111,6 +117,8 @@ public abstract class Fighter {
           executeFrame = frame;
           syncAction(ActionState.idle, frame);
         }
+        // move body hitbox back to original position pre-attack
+        else posX -= ((side == FighterSide.left) ? attackingHitBoxReach : -attackingHitBoxReach) / 26;
       }
       // pre-block - wind-up animation
       case preBlocking -> {
@@ -140,9 +148,10 @@ public abstract class Fighter {
       case parried -> {
         if (actionFrame == 65) {
           executeFrame = frame;
+          resetAttackHitbox();
           syncAction(ActionState.idle, frame);
-        }
-        else resetAttackHitbox();
+        } 
+        else posX += (attackingPosX - parriedPosX) / 65;
       }
     }
   }
@@ -171,6 +180,22 @@ public abstract class Fighter {
   }
   
 
+  private boolean updatePosition(double posX, double posY) {
+    if (posX >= minX && posX + width <= maxX) {
+      // update fighter body hitbox position (position values represent topleft corner)
+      this.posX = posX;
+      this.posY = posY;
+
+      // move attack hitbox constantly with fighter position
+      attackX = posX + ((side == FighterSide.left) ? width : 0);
+      attackY = posY + height / 2; 
+      
+      return true;
+    }
+    return false;
+  }
+
+
   public void detectHit(Fighter opponent, int frame) {
     // only check for hit if the opponent is attacking
     if (opponent.actionState == ActionState.attacking) {
@@ -181,6 +206,7 @@ public abstract class Fighter {
           // prevent damage and parry the opponent if their attack was blocked within the parry window
           if (canParry) {
             opponent.actionState = ActionState.parried;
+            opponent.parriedPosX = opponent.posX;
             opponent.executeFrame = frame;
           } 
           //play deflecting animation
@@ -201,21 +227,9 @@ public abstract class Fighter {
   }
 
 
-  private boolean updatePosition(double posX, double posY) {
-    if (posX > minX && posX + width < maxX) {
-      // update fighter body hitbox position (position values represent topleft corner)
-      this.posX = posX;
-      this.posY = posY;
-      resetAttackHitbox();
-      return true;
-    }
-    return false;
-  }
-
-
   private void resetAttackHitbox() {
     // update attack hitbox a constant distance from fighter based which direction fighter is facing
-    attackX = posX + ((side == FighterSide.left) ? width : 0);
+    attackX = posX + ((side == FighterSide.left) ? width - attackingHitBoxReach : attackingHitBoxReach);
     attackY = posY + height / 2; 
   }
 }

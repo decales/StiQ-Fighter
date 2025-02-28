@@ -54,6 +54,7 @@ public class Model {
     // start game and initialize fighter types based on selected game mode
     // used as onClick method for select mode screen buttons
     if (gameMode != null) {
+
       appState = AppState.inGame;
 
       switch(gameMode) {
@@ -70,6 +71,7 @@ public class Model {
           rightFighter = new ComputerFighter(FighterSide.right, viewSize, frameRate);
         }
       }
+      updateSubscribers();
     }
   }
 
@@ -79,15 +81,14 @@ public class Model {
 
     if (appState == AppState.inGame) {
       faceFighers();
-      controlComputerFighters(); // only applies in PvC or CvC, but called regardless
-
       // check if fighters have hit each other
       leftFighter.detectHit(rightFighter, frame);
       rightFighter.detectHit(leftFighter, frame);
-
       // syncs figher action-animations with frame 
       leftFighter.syncAction(leftFighter.actionState, frame);
       rightFighter.syncAction(rightFighter.actionState, frame);
+      // only applies in PvC or CvC, but called regardless
+      controlComputerFighters(); 
       checkReset();
     }
     updateSubscribers();

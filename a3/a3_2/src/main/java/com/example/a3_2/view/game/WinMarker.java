@@ -22,6 +22,8 @@ public class WinMarker extends ImageView {
 
   public void update(double viewSize, int wins) {
     setFitWidth(viewSize * 0.08125);
+
+    if (wins >= 11) setScaleX(1);
     if (wins >= sprites.length) setImage(sprites[sprites.length - 1]);
     else setImage(sprites[wins]);
   }

@@ -18,6 +18,7 @@ public class MenuSelection extends ImageView {
     setPreserveRatio(true);
   }
 
+
   public void update(double viewWidth, GameMode gameMode) {
     setFitWidth(viewWidth * 0.3667);
     setImage(spriteMap.get(gameMode));
