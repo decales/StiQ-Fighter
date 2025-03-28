@@ -1,13 +1,16 @@
 package com.example.a3_2.view.game;
 
+import java.util.HashMap;
 import com.example.a3_2.controller.Controller;
 import com.example.a3_2.model.Fighter;
 import com.example.a3_2.model.PublishSubscribe;
+import com.example.a3_2.model.Fighter.ActionState;
 import com.example.a3_2.model.Fighter.FighterSide;
 import com.example.a3_2.model.Model.AppState;
 import com.example.a3_2.model.Model.GameMode;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Line;
@@ -23,10 +26,23 @@ public class GameView extends StackPane implements PublishSubscribe {
 
   public GameView(Controller controller) {
 
+    HashMap<ActionState, Image[]> actionMap = new HashMap<>(); // initialize a map of sprites to animate the fighters
+
+    // idle, movingLeft, movingRight, preAttacking, attacking, postAttacking, preBlocking, blocking, postBlocking, deflecting, parried 
+    int[] actionFileCount = { 19, 9, 9, 7, 4, 9, 6, 1, 9, 7, 22 };
+    for (int i = 0; i < ActionState.values().length; i++) {
+      Image[] spriteFiles = new Image[actionFileCount[i]];
+      for (int j = 0; j < spriteFiles.length; j++) {
+        spriteFiles[j] = new Image(getClass().getResource(
+              String.format("/game/fighter/%s/%s_%04d.png", ActionState.values()[i], ActionState.values()[i], j + 1)).toString());
+      }
+      actionMap.put(ActionState.values()[i], spriteFiles);
+    }
+
     // fighter sprites
     Pane fighterPane = new Pane();
-    leftFighterView = new FighterView();
-    rightFighterView = new FighterView();
+    leftFighterView = new FighterView(actionMap);
+    rightFighterView = new FighterView(actionMap);
 
     // fighter bars
     leftBar = new FighterBar(FighterSide.left);

@@ -1,6 +1,5 @@
 package com.example.a3_2.view.game;
 
-import java.io.File;
 import com.example.a3_2.model.Fighter.FighterSide;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -19,9 +18,10 @@ public class HealthBar extends HBox {
     animationInterval = 120; // health sprites animate every x frames
 
     // initialize sprite array
-    File[] spriteFiles = new File(getClass().getResource(String.format("/game/health/")).getPath()).listFiles();
-    sprites = new Image[spriteFiles.length];
-    for (int i = 0; i < sprites.length; i++) sprites[i] = new Image(spriteFiles[i].toURI().toString());
+    sprites = new Image[4];
+    for (int i = 0; i < sprites.length; i++) {
+      sprites[i] = new Image(getClass().getResource(String.format("/game/health/health_%04d.png", i + 1)).toString());
+    }
   }  
 
 

@@ -18,20 +18,11 @@ public class FighterView extends ImageView {
   private double fighterRatio;
   private Timeline blinkTimer;
 
-  public FighterView() {
-
-    spriteMap = new HashMap<ActionState, Image[]>();
+  public FighterView(HashMap<ActionState, Image[]> spriteMap) {
+    this.spriteMap = spriteMap;
     frameRepetition = 3; // number of times each frame repeats to control animation speed
     fighterRatio = 46.0 / 168.0; // width of fighter based on where it is drawn in the sprite, used for hitbox scaling purposes
     blinkTimer = new Timeline(new KeyFrame(Duration.millis(75), e -> setVisible(!isVisible())));
-
-    // Initialize a map of all sprite frames for each action
-    for (ActionState action : ActionState.values()) {
-      File[] spriteFiles = new File(getClass().getResource(String.format("/game/fighter/%s", action)).getPath()).listFiles();
-      Image[] sprites = new Image[spriteFiles.length];
-      for (int i = 0; i < sprites.length; i++) sprites[i] = new Image(spriteFiles[i].toURI().toString());
-      spriteMap.put(action, sprites);
-    }
   }
 
 
