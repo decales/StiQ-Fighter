@@ -7,7 +7,7 @@ using a variation of Q-learning.
 In its current state, *StiQ Fighter* can only be accessed by cloning the repository and running the application directly:
 
 ```bash
-git clone https://github.com/decales/StiQ-Fighter && cd StiQ-Fighter && ./run
+git clone https://github.com/decales/StiQ-Fighter && cd StiQ-Fighter/StiQ-Fighter && ./run
 ```
 Should you wish to build an executable JAR file, you may do so by executing ```./build``` within the repository, and the
 JAR will be found in the *out/* directory. Please note that Java 21+ is required to run the application.
@@ -21,33 +21,23 @@ from the menu:
 - *PvC* – combat between one human player (left-side) and one computer player (right-side)
 - *CvC* – combat between two computer players
 
-At the start of a round, each fighter has 7 health-points (represented by the bar of heart sprites located at the top
-of the screen on the side the player begins at) and must deplete their opponent’s health-points through combat to
-win the round. The combat system is kept minimalist in an attempt to not over complicate the Q-learning
-implementation, limiting each fighter to the following actions with the following gameplay mechanics:
+At the start of a round, each fighter has 7 health-points (represented by the bar of heart sprites located at the top of the screen on the side the player begins at) and must deplete their opponent’s health-points through combat to win the round. The combat system is kept minimalist in an attempt to not over complicate the Q-learning implementation, limiting each fighter to the following actions with the following gameplay mechanics:
 
 - Move-left
 - Move-right
 - Attack
-    - a fighter is only considered to be *attacking* during the ‘thrusting’ part of the animation, and not
-       during the animation’s wind-up or wind-down
-    - attacks are successful when the opponent is not *blocking, deflecting,* or *invincible* and the tip of a
-       fighter’s weapon reaches or passes the opponent’s wielding hand (roughly)
+    - a fighter is only considered to be *attacking* during the thrusting part of the animation, and not during the animation’s wind-up or wind-down
+    - attacks are successful when the opponent is not *blocking, deflecting,* or *invincible* and the tip of a fighter’s weapon reaches or passes the opponent’s wielding hand (roughly)
     - successful attacks reduce the opponent’s health-points by 1
     - successful attacks while the opponent is *parried* reduce their health-points by 3
     - after receiving damage from an attack, the opponent is *invincible* for the next 75 frames (1250 ms)
-    - while *attacking*, a fighter’s hit-box moves slightly forward in the direction of the attack before
-       returning to its original position to reflect where their sprite appears to be in the animation
+    - while *attacking*, a fighter’s hit-box moves slightly forward in the direction of the attack before returning to its original position to reflect where their sprite appears to be in the animation
     - a fighter cannot execute other actions until the entire attack animation completes
 - Block
     - a fighter is only considered to be *blocking* after the wind-up of the block animation and before the wind-down
-    - while *blocking*, a fighter does not receive damage from the opponent’s next attack that would
-       otherwise be successful
-    - after the opponent’s attack lands when a fighter is *blocking* , the fighter returns to the *idle* state after a
-       brief *deflecting* animation to indicate that the block was successful
-    - in addition to preventing damage to a fighter, the opponent becomes *parried* if their next attack
-       lands within 5 frames (~83 ms) after the fighter begins *blocking – parried* opponents cannot execute
-       any actions for the next 65 frames (~1083 ms) or until they receive damage.
+    - while *blocking*, a fighter does not receive damage from the opponent’s next attack that would otherwise be successful
+    - after the opponent’s attack lands when a fighter is *blocking* , the fighter returns to the *idle* state after a brief *deflecting* animation to indicate that the block was successful
+    - in addition to preventing damage to a fighter, the opponent becomes *parried* if their next attack lands within 5 frames (~83 ms) after the fighter begins *blocking – parried* opponents cannot execute any actions for the next 65 frames (~1083 ms) or until they receive damage.
     - a fighter cannot execute other actions until the entire block animation completes.
     - **TIP** – note the star that appears near a fighter’s hand during the wind-up of the block animation – upon disappearing, this indicates that a fighter is now blocking , and can be helpful in timing the parry window.
 
@@ -67,12 +57,7 @@ The key binding for each action are as follows:
 
 ### Structure
 
-The game is implemented as a JavaFX application that uses an MVC-like design pattern to structure its various
-classes. In this case, there is a single model class containing the game logic and data that communicates with
-various view classes through a publish-subscribe mechanism. A simple controller class is used to handle the
-events generated in the view classes and update the model. The project directory structure is organized to reflect
-the components of MVC, where most of the classes are organized into separate *model/* and *view/* sub-directories.
-The rest of the classes, including the controller class, are not contained in a sub-directory:
+The game is implemented as a JavaFX application that uses an MVC-like design pattern to structure its various classes. In this case, there is a single model class containing the game logic and data that communicates with various view classes through a publish-subscribe mechanism. A simple controller class is used to handle the events generated in the view classes and update the model. The project directory structure is organized to reflect the components of MVC, where most of the classes are organized into separate *model/* and *view/* sub-directories. The rest of the classes, including the controller class, are not contained in a sub-directory:
 
 - *model/*
     - *ComputerFighter.java –* class containing logic to control computer fighters
@@ -97,30 +82,15 @@ The rest of the classes, including the controller class, are not contained in a 
 - *Controller.java –* event handling class used by view components to perform actions in the model
 - *Main.java –* entry point class required to build JavaFX .jar files
 
-The files of interest relating to the implementation of the AI fighter are all contained in the model directory, 
-and consist specifically of *ComputerFighter.java* and *GameState.java.* The former of these classes is where the 
-Q-learning algorithm is set up and implemented, while the latter is used within *ComputerFighter* to support its implementation.
+The files of interest relating to the implementation of the AI fighter are all contained in the model directory, and consist specifically of *ComputerFighter.java* and *GameState.java.* The former of these classes is where the Q-learning algorithm is set up and implemented, while the latter is used within *ComputerFighter* to support its implementation.
 
 ### Q-learning
 
-Within *ComputerFighter,* the Q-learning process is centered around maintaining the *qTable* , which maps game
-states to action-value pairs, implemented specifically as a *HashMap* of type *HashMap<GameState,
-Map<Action, Double>>.* Regarding the states themselves, there is little to comment on other than that they are
-designed to be as coarse as possible while capturing the necessary data that forms the basis of the an AI fighter’s
-behaviour. In this case, a *GameState* is comprised mostly of boolean values regarding the AI fighter’s opponent,
-such as whether they are in attacking distance, or whether they were recently hit. Each frame, the
-*determineAction()* function is called from *Model.java,* where the AI observes the current game state, selects an
-action using an epsilon-greedy policy (balancing exploration and exploitation), and executes it. The state-action
-pair is then evaluated based on the immediate reward function, *scoreAction(),* which assigns positive or negative
-rewards depending on the consequences of the chosen action (such as successfully attacking an opponent or
-making an unnecessary block). Finally, the *updateTable()* function updates the Q-value for the previous state-
-action pair using the following variant of the Q-learning formula:
+Within *ComputerFighter,* the Q-learning process is centered around maintaining the *qTable* , which maps game states to action-value pairs, implemented specifically as a *HashMap* of type *HashMap<GameState, HashMap<Action, Double>>.* Regarding the states themselves, there is little to comment on other than that they are designed to be as coarse as possible while capturing the necessary data that forms the basis of the an AI fighter’s behaviour. In this case, a *GameState* is comprised mostly of boolean values regarding the AI fighter’s opponent, such as whether they are in attacking distance, or whether they were recently hit. Each frame, the *determineAction()* function is called from *Model.java,* where the AI observes the current game state, selects an action using an epsilon-greedy policy (balancing exploration and exploitation), and executes it. The state-action pair is then evaluated based on the immediate reward function, *scoreAction(),* which assigns positive or negative rewards depending on the consequences of the chosen action (such as successfully attacking an opponent or making an unnecessary block). Finally, the *updateTable()* function updates the Q-value for the previous state-action pair using the following variant of the Q-learning formula:
 
 *Q(s, a) = (1 − α)* * *Q(s , a) + α * (r + γ * max(Q(s′, a′)))*
 
-where α (alpha) is the learning rate, r is the immediate reward, γ (gamma) is the discount factor, and *max(Q(s′,
-a′)* is the highest Q-value for the new state. Over time, the AI refines its strategy, favouring high-reward actions
-while gradually reducing exploration through state-dependent epsilon decay.
+where α (alpha) is the learning rate, r is the immediate reward, γ (gamma) is the discount factor, and *max(Q(s′, a′)* is the highest Q-value for the new state. Over time, the AI refines its strategy, favouring high-reward actions while gradually reducing exploration through state-dependent epsilon decay.
 
 #### State-dependent Epsilon Exploitation
 
